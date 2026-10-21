@@ -264,6 +264,93 @@ if ('serviceWorker' in navigator) {
     });
   });
 }
+
+/* Bulk book deletion and whole-series deletion. Selection is temporary, never stored. */
+const selectedPapertrailBooks = new Set();
+const renderWithStorage = render;
+render = function() {
+  renderWithStorage();
+  const section = document.getElementById('seriesSections');
+  section.querySelectorAll('.series-card[data-series]').forEach(card => {
+    const sid = Number(card.dataset.series);
+    const item = series.find(x => x.id === sid);
+    if (!item) return;
+    const actions = card.querySelector('.card-actions');
+    if (actions) {
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'icon-btn';
+      del.textContent = '🗑';
+      del.title = 'Delete entire series or universe';
+      del.setAttribute('aria-label', 'Delete entire '+item.name);
+      del.dataset.deleteSeries = String(sid);
+      actions.appendChild(del);
+    }
+    card.querySelectorAll('.book-row').forEach((row,i) => {
+      const book = [...item.books].sort((a,b)=>a.order-b.order)[i];
+      if (!book) return;
+      const label = document.createElement('label');
+      label.style.cssText='display:flex;align-items:center;justify-content:center;min-width:32px;min-height:40px;cursor:pointer';
+      label.title='Select '+book.title+' for bulk deletion';
+      const check = document.createElement('input');
+      check.type='checkbox';
+      check.dataset.bulkBook=String(book.id);
+      check.checked=selectedPapertrailBooks.has(book.id);
+      check.setAttribute('aria-label','Select '+book.title);
+      check.style.cssText='width:20px;height:20px;accent-color:#A64D3A;cursor:pointer';
+      label.appendChild(check);
+      row.insertBefore(label,row.firstChild);
+    });
+  });
+  const toolbar=document.getElementById('papertrailBulkToolbar');
+  if (toolbar) {
+    const available=new Set(allBooks().map(b=>b.id));
+    for (const id of selectedPapertrailBooks) if(!available.has(id))selectedPapertrailBooks.delete(id);
+    toolbar.querySelector('#papertrailSelectionCount').textContent=selectedPapertrailBooks.size+' selected';
+    toolbar.querySelector('#papertrailDeleteSelected').disabled=selectedPapertrailBooks.size===0;
+  }
+};
+const bulkToolbar=document.createElement('div');
+bulkToolbar.id='papertrailBulkToolbar';
+bulkToolbar.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 14px;margin:12px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px';
+bulkToolbar.innerHTML='<strong style="margin-right:auto">Manage books</strong><span id="papertrailSelectionCount">0 selected</span><button class="btn ghost" id="papertrailSelectVisible" type="button">Select visible books</button><button class="btn ghost" id="papertrailClearSelection" type="button">Clear</button><button class="btn" id="papertrailDeleteSelected" type="button" style="color:#A64D3A;border:1px solid #A64D3A" disabled>Delete selected</button>';
+document.getElementById('seriesSections').before(bulkToolbar);
+document.getElementById('seriesSections').addEventListener('change',e=>{
+  const cb=e.target.closest('[data-bulk-book]');
+  if(!cb)return;
+  const id=Number(cb.dataset.bulkBook);
+  if(cb.checked)selectedPapertrailBooks.add(id);else selectedPapertrailBooks.delete(id);
+  document.getElementById('papertrailSelectionCount').textContent=selectedPapertrailBooks.size+' selected';
+  document.getElementById('papertrailDeleteSelected').disabled=selectedPapertrailBooks.size===0;
+});
+document.getElementById('seriesSections').addEventListener('click',e=>{
+  const btn=e.target.closest('[data-delete-series]');
+  if(!btn)return;
+  const id=Number(btn.dataset.deleteSeries);
+  const item=series.find(x=>x.id===id);
+  if(!item)return;
+  if(!confirm('Delete the entire "'+item.name+'" '+(item.kind||'series')+' and all '+item.books.length+' books from this phone? This cannot be undone.'))return;
+  item.books.forEach(b=>selectedPapertrailBooks.delete(b.id));
+  series=series.filter(x=>x.id!==id);
+  render();
+  toast('Series / universe deleted');
+});
+document.getElementById('papertrailSelectVisible').onclick=()=>{
+  document.querySelectorAll('#seriesSections [data-bulk-book]').forEach(cb=>selectedPapertrailBooks.add(Number(cb.dataset.bulkBook)));
+  render();
+};
+document.getElementById('papertrailClearSelection').onclick=()=>{selectedPapertrailBooks.clear();render();};
+document.getElementById('papertrailDeleteSelected').onclick=()=>{
+  const count=selectedPapertrailBooks.size;
+  if(!count)return;
+  if(!confirm('Delete '+count+' selected book'+(count===1?'':'s')+' from this phone? This cannot be undone.'))return;
+  series.forEach(item=>{item.books=item.books.filter(b=>!selectedPapertrailBooks.has(b.id));});
+  series=series.filter(item=>item.books.length>0);
+  selectedPapertrailBooks.clear();
+  render();
+  toast(count+' book'+(count===1?'':'s')+' deleted');
+};
+render();
 </script>
 </body>
 </html>
