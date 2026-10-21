@@ -177,14 +177,24 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
   .result-actions .btn {flex:1;min-width:0;white-space:normal}
 }
 </style>
-</head>
+<style>
+.book-row.papertrail-owned-book{border:4px solid #21844c!important;background:#eaf7ed!important;box-sizing:border-box}
+.papertrail-book-rating{display:block;color:#8b6021;font-weight:800;font-size:12px;margin-top:5px}
+.papertrail-book-move{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.papertrail-book-move button{border:1px solid #a9b3a9;border-radius:7px;background:white;min-width:33px;min-height:36px;cursor:pointer}
+.papertrail-book-move .papertrail-grip{touch-action:none;cursor:grab;background:#e3ece6}
+@media(max-width:700px){.book-row{grid-template-columns:22px minmax(0,1fr) auto!important}.book-row:has([data-bulk-book]){grid-template-columns:26px 20px minmax(0,1fr) auto!important}.book-row .papertrail-book-move{grid-column:3 / -1;justify-content:flex-end}.book-row:has([data-bulk-book]) .papertrail-book-move{grid-column:3 / -1}.book-row .book-title{word-break:normal!important;overflow-wrap:break-word!important}}
+</style>
+<style>
+.challenge-panel{margin-bottom:18px}.challenge-controls{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:end}.challenge-controls label{display:flex;flex-direction:column;gap:7px;font-weight:700;font-size:13px}.challenge-controls input,.challenge-controls select{width:100%;min-width:0;padding:10px;border:1px solid #bdc9c3;border-radius:9px;background:white;color:#1d3025}.challenge-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:20px 0}.challenge-stats>div{display:flex;flex-direction:column;gap:4px}.challenge-stats strong{font-size:clamp(19px,4vw,30px);color:#205e3c}.challenge-stats span,.challenge-book small{font-size:12px;color:#647469}.challenge-track{height:20px;background:#dce6df;border-radius:999px;overflow:hidden}.challenge-track>div{height:100%;width:0;background:#238c4e;border-radius:999px;transition:width .3s}.challenge-book{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #dce6df}.challenge-book>div:first-child{min-width:0}.challenge-book small{display:block;margin-top:5px}.challenge-book-controls{display:flex;gap:6px;align-items:center}.challenge-book-controls input{width:90px;padding:9px;border:1px solid #b6c8bc;border-radius:8px}.challenge-book-controls button{white-space:nowrap}@media(max-width:700px){.challenge-controls,.challenge-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.challenge-book{flex-direction:column;align-items:stretch}.challenge-book-controls{justify-content:flex-start}.challenge-book-controls input{flex:1}}
+</style></head>
 <body>
 <div class="app-root" id="appRoot">
   <header class="topbar">
     <div class="brand"><div class="brand-mark">✦</div><div><h1>papertrail</h1><small>your personal reading shelf</small></div></div>
     <div class="top-actions"><span class="pill-note">A home for every next read</span><button class="btn soft" id="quickAdd">＋ Add a book</button></div>
   </header>
-  <nav class="main-nav"><button class="nav-btn active" data-tab="tbr">My TBR <span id="navCount">12</span></button><button class="nav-btn" data-tab="search">Search & add</button></nav>
+  <nav class="main-nav"><button class="nav-btn active" data-tab="tbr">My TBR <span id="navCount">12</span></button><button class="nav-btn" data-tab="search">Search & add</button><button class="nav-btn" data-tab="challenge">Challenge</button></nav>
   <main>
     <section id="tbrPage">
       <div class="page-head"><div><div class="eyebrow">The next chapter starts here</div><h2>Your reading list</h2><p class="subtitle">Every world you want to get lost in, in the order you want to visit them. Drag a series into place, then open it to fine-tune the books.</p></div><button class="btn primary" id="addFromHeader">＋ Add to my TBR</button></div>
@@ -201,6 +211,21 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
         <div class="panel"><h3>Find books & universes</h3><p class="panel-intro">Search millions of real books and authors online using Open Library. Your saved TBR remains available offline.</p><div class="searchbox"><span>⌕</span><input id="catalogSearch" placeholder="Search any book, author, or series" /></div><div class="search-results" id="onlineCatalogResults" aria-live="polite"></div><div class="search-results" id="catalogResults"></div><div class="notice">Tip: choose <b>Add entire universe</b> to review a recommended reading order across connected series—not just a single trilogy. You can untick any books you don't want.</div></div>
         <div class="panel"><h3>Add manually</h3><p class="panel-intro">Know exactly what you want to track? Add a single book or start a series of your own.</p><form id="manualForm"><div class="field"><label for="manualTitle">Book title *</label><input id="manualTitle" required placeholder="e.g. The Colour of Magic" /></div><div class="field-row"><div class="field"><label for="manualAuthor">Author *</label><input id="manualAuthor" required placeholder="Author name" /></div><div class="field"><label for="manualGenre">Main genre *</label><input id="manualGenre" list="genreSuggestions" required placeholder="e.g. Fantasy, Cozy mystery…" /><datalist id="genreSuggestions"></datalist></div></div><div class="field"><label for="manualSeries">Series / universe name</label><input id="manualSeries" placeholder="e.g. Discworld (leave blank for standalone)" /></div><div class="field-row"><div class="field"><label for="manualOrder">Position in series</label><input id="manualOrder" type="number" min="1" placeholder="e.g. 1" /></div><div class="field"><label for="manualOwned">Do you own it?</label><select id="manualOwned"><option value="no">Not yet</option><option value="yes">Yes, I own it</option></select></div></div><button class="btn primary" type="submit" style="width:100%">＋ Add book to TBR</button></form></div>
       </div>
+    </section>
+    <section id="challengePage" class="hidden">
+      <div class="page-head"><div><div class="eyebrow">January — December</div><h2>Reading challenge</h2><p class="subtitle">Set your yearly goal in equivalent books. Finished pages count towards your target, including long books.</p></div></div>
+      <div class="panel challenge-panel">
+        <div class="challenge-controls">
+          <label>Challenge year <select id="challengeYear"></select></label>
+          <label>Target books <input id="challengeTargetBooks" type="number" min="1" max="10000" step="1" value="27"></label>
+          <label>Pages per book <input id="challengePagesPerBook" type="number" min="1" max="100000" step="1" value="400"></label>
+          <button class="btn primary" type="button" id="saveChallenge">Save goal</button>
+        </div>
+        <div id="challengeSummary" aria-live="polite"></div>
+        <div class="challenge-track"><div id="challengeProgressFill"></div></div>
+        <p class="panel-intro" id="challengeRange"></p>
+      </div>
+      <div class="panel"><h3>Books finished this year</h3><p class="panel-intro">Dates are recorded automatically when you mark a book Read. Page counts are looked up online when available, and can be corrected for your edition.</p><div id="challengeBooks"></div></div>
     </section>
   </main>
 </div>
@@ -231,9 +256,9 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function updateStats(){ $('statBooks').textContent=allBooks().length; $('statSeries').textContent=series.length; $('statOwned').textContent=allBooks().filter(b=>b.owned).length; $('statRead').textContent=allBooks().filter(b=>b.read&&b.rating!==null).length; $('navCount').textContent=allBooks().length; }
 function refreshGenreControls(){const values=[...new Set([...genres,...series.map(s=>s.genre).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));const filter=$('genreFilter'),previous=filter.value;filter.innerHTML='<option value="all">All genres</option>'+values.map(g=>`<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');filter.value=values.includes(previous)?previous:'all';const authors=[...new Set(series.map(s=>s.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b));const authorFilter=$('authorFilter'),oldAuthor=authorFilter.value;authorFilter.innerHTML='<option value="all">All authors</option>'+authors.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');authorFilter.value=authors.includes(oldAuthor)?oldAuthor:'all';const names=[...new Set(series.map(s=>s.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));const seriesFilter=$('seriesFilter'),oldSeries=seriesFilter.value;seriesFilter.innerHTML='<option value="all">All series & universes</option>'+names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');seriesFilter.value=names.includes(oldSeries)?oldSeries:'all';const chips=$('genreChips'),active=activeGenre;chips.innerHTML='<button class="chip '+(active==='all'?'active':'')+'" data-genre="all">All genres</button>'+values.map(g=>`<button class="chip ${active===g?'active':''}" data-genre="${escapeHtml(g)}" title="${escapeHtml(g)}">${escapeHtml(g)}</button>`).join('')+'<button class="chip" id="manageGenres">＋ Manage genres</button>';const list=$('genreSuggestions');if(list)list.innerHTML=values.map(g=>`<option value="${escapeHtml(g)}"></option>`).join('');}
-function render(){refreshGenreControls();updateStats(); const q=$('tbrSearch').value.toLowerCase(); const genre=$('genreFilter').value,author=$('authorFilter').value,seriesName=$('seriesFilter').value; let list=series.filter(s=>(activeGenre==='all'||s.genre===activeGenre)&&(genre==='all'||s.genre===genre)&&(author==='all'||s.author===author)&&(seriesName==='all'||s.name===seriesName)&&[s.name,s.author,s.genre,...s.books.map(b=>b.title)].join(' ').toLowerCase().includes(q));const sort=$('sortMode').value;if(sort==='name')list.sort((a,b)=>a.name.localeCompare(b.name));if(sort==='rating')list.sort((a,b)=>(parseFloat(avg(b))||0)-(parseFloat(avg(a))||0));if(sort==='progress')list.sort((a,b)=>readCount(b)/b.books.length-readCount(a)/a.books.length);const groups={};list.forEach(s=>(groups[s.genre]??=[]).push(s));let html='';Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(g=>{html+=`<div class="section-title"><h3>${escapeHtml(g)}</h3><span>${groups[g].length} ${groups[g].length===1?'series':'series & worlds'}</span></div><div class="series-list">`;groups[g].forEach(s=>{const read=readCount(s),rating=avg(s);html+=`<article class="series-card" draggable="true" data-series="${s.id}"><div class="drag" title="Drag to reorder">⠿</div><div class="series-info"><h4 class="series-name">${escapeHtml(s.name)}</h4><div class="series-meta"><span>${escapeHtml(s.author)}</span><span class="genre-tag">${escapeHtml(s.genre)}</span><span>${s.books.length} books</span><span>${read}/${s.books.length} read</span></div></div><div class="series-rating"><div class="rating-num">${rating}<em> / 10</em></div><div class="rating-caption">${read?`${read} rated/read`:'No ratings yet'}</div><div class="progress"><span style="width:${read/s.books.length*100}%"></span></div></div><div class="card-actions"><button class="icon-btn" title="Move up" data-action="up" data-id="${s.id}">↑</button><button class="icon-btn" title="Move down" data-action="down" data-id="${s.id}">↓</button><button class="icon-btn" title="Edit series" data-action="edit" data-id="${s.id}">✎</button><button class="icon-btn" title="${s.expanded?'Collapse':'Expand'} books" data-action="toggle" data-id="${s.id}">${s.expanded?'−':'＋'}</button></div>`;if(s.expanded){html+=`<div class="book-list">`;s.books.sort((a,b)=>a.order-b.order).forEach((b,i)=>{html+=`<div class="book-row"><span class="book-num">${i+1}</span><span><span class="book-title">${escapeHtml(b.title)}</span><span class="book-sub">${escapeHtml(b.arc||s.name)}</span></span><span class="status ${b.read?'read':''}">${b.read?'✓ Read':'To read'}</span><span class="owned">${b.owned?'● Owned':'○ Not owned'}</span><button class="icon-btn" title="Edit book" data-action="book" data-id="${s.id}" data-book="${b.id}">✎</button></div>`;});html+='</div>';}html+='</article>';});html+='</div>';});$('seriesSections').innerHTML=html||'<div class="empty"><strong>No books found just yet</strong>Try another search or add your next universe.</div>';attachDrag();}
+function render(){refreshGenreControls();updateStats(); const q=$('tbrSearch').value.toLowerCase(); const genre=$('genreFilter').value,author=$('authorFilter').value,seriesName=$('seriesFilter').value; let list=series.filter(s=>(activeGenre==='all'||s.genre===activeGenre)&&(genre==='all'||s.genre===genre)&&(author==='all'||s.author===author)&&(seriesName==='all'||s.name===seriesName)&&[s.name,s.author,s.genre,...s.books.map(b=>b.title)].join(' ').toLowerCase().includes(q));const sort=$('sortMode').value;if(sort==='name')list.sort((a,b)=>a.name.localeCompare(b.name));if(sort==='rating')list.sort((a,b)=>(parseFloat(avg(b))||0)-(parseFloat(avg(a))||0));if(sort==='progress')list.sort((a,b)=>readCount(b)/b.books.length-readCount(a)/a.books.length);const groups={};list.forEach(s=>(groups[s.genre]??=[]).push(s));let html='';Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(g=>{html+=`<div class="section-title"><h3>${escapeHtml(g)}</h3><span>${groups[g].length} ${groups[g].length===1?'series':'series & worlds'}</span></div><div class="series-list">`;groups[g].forEach(s=>{const read=readCount(s),rating=avg(s);html+=`<article class="series-card" draggable="true" data-series="${s.id}"><div class="drag" title="Drag to reorder">⠿</div><div class="series-info"><h4 class="series-name">${escapeHtml(s.name)}</h4><div class="series-meta"><span>${escapeHtml(s.author)}</span><span class="genre-tag">${escapeHtml(s.genre)}</span><span>${s.books.length} books</span><span>${read}/${s.books.length} read</span></div></div><div class="series-rating"><div class="rating-num">${rating}<em> / 10</em></div><div class="rating-caption">${read?`${read} rated/read`:'No ratings yet'}</div><div class="progress"><span style="width:${read/s.books.length*100}%"></span></div></div><div class="card-actions"><button class="icon-btn" title="Move up" data-action="up" data-id="${s.id}">↑</button><button class="icon-btn" title="Move down" data-action="down" data-id="${s.id}">↓</button><button class="icon-btn" title="Edit series" data-action="edit" data-id="${s.id}">✎</button><button class="icon-btn" title="${s.expanded?'Collapse':'Expand'} books" data-action="toggle" data-id="${s.id}">${s.expanded?'−':'＋'}</button></div>`;if(s.expanded){html+=`<div class="book-list">`;s.books.sort((a,b)=>a.order-b.order).forEach((b,i)=>{html+=`<div class="book-row ${b.owned?'papertrail-owned-book':''}" data-book-id="${b.id}"><span class="book-num">${i+1}</span><span><span class="book-title">${escapeHtml(b.title)}</span><span class="book-sub">${escapeHtml(b.arc||s.name)}</span>${b.rating!=null?`<span class="papertrail-book-rating">★ ${Number(b.rating).toFixed(1)} / 10</span>`:''}</span><span class="status ${b.read?'read':''}">${b.read?'✓ Read':'To read'}</span><span class="owned">${b.owned?'● Owned':'○ Not owned'}</span><button class="icon-btn" title="Edit book" data-action="book" data-id="${s.id}" data-book="${b.id}">✎</button></div>`;});html+='</div>';}html+='</article>';});html+='</div>';});$('seriesSections').innerHTML=html||'<div class="empty"><strong>No books found just yet</strong>Try another search or add your next universe.</div>';attachDrag();}
 function attachDrag(){document.querySelectorAll('[data-series]').forEach(el=>{el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',el.dataset.series);el.style.opacity='.5'});el.addEventListener('dragend',()=>el.style.opacity='1');el.addEventListener('dragover',e=>e.preventDefault());el.addEventListener('drop',e=>{e.preventDefault();const from=Number(e.dataTransfer.getData('text/plain')),to=Number(el.dataset.series);if(from===to)return;const a=series.findIndex(s=>s.id===from),b=series.findIndex(s=>s.id===to);const moved=series.splice(a,1)[0];series.splice(b,0,moved);render();});});}
-function switchTab(tab){$('tbrPage').classList.toggle('hidden',tab!=='tbr');$('searchPage').classList.toggle('hidden',tab!=='search');document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='search')renderCatalog();}
+function switchTab(tab){$('tbrPage').classList.toggle('hidden',tab!=='tbr');$('searchPage').classList.toggle('hidden',tab!=='search');$('challengePage').classList.toggle('hidden',tab!=='challenge');if(tab==='challenge')renderChallenge();document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='search')renderCatalog();}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 $('quickAdd').onclick=$('addFromHeader').onclick=()=>switchTab('search');
  $('tbrSearch').addEventListener('input',render);$('genreFilter').addEventListener('change',()=>{activeGenre='all';document.querySelectorAll('.chip[data-genre]').forEach(c=>c.classList.toggle('active',c.dataset.genre==='all'));render();});$('authorFilter').addEventListener('change',render);$('seriesFilter').addEventListener('change',render);$('clearFilters').addEventListener('click',()=>{$('genreFilter').value='all';$('authorFilter').value='all';$('seriesFilter').value='all';activeGenre='all';document.querySelectorAll('.chip[data-genre]').forEach(c=>c.classList.toggle('active',c.dataset.genre==='all'));render();});$('sortMode').addEventListener('change',render);
@@ -361,7 +386,7 @@ render = function(){ originalRender(); document.querySelectorAll('.series-card[d
 const baseEditBook = openEditBook;
 openEditBook = function(s,b){
   openModal('Update book',`<form id="editBookForm"><div class="field"><label>Book / story title</label><input id="editBookTitle" required value="${escapeHtml(b.title)}"></div><div class="field"><label>Series arc / sub-series</label><input id="editBookArc" value="${escapeHtml(b.arc||'')}" placeholder="e.g. Liveship Traders, novella, short story"></div><div class="field-row"><div class="field"><label>Reading order</label><input id="editBookOrder" type="number" min="1" value="${b.order}"></div><div class="field"><label>Rating out of 10</label><input id="editBookRating" type="number" inputmode="decimal" min="0" max="10" step="0.1" placeholder="e.g. 8.7" value="${b.rating == null ? '' : Number(b.rating).toFixed(1)}"></div></div><div class="field-row"><div class="field"><label>Reading status</label><select id="editBookRead"><option value="want" ${!b.read&&!b.currentlyReading&& !b.onHold&&!b.dnf?'selected':''}>Want to read</option><option value="current" ${b.currentlyReading?'selected':''}>Currently reading</option><option value="yes" ${b.read?'selected':''}>Read</option><option value="hold" ${b.onHold?'selected':''}>On hold</option><option value="dnf" ${b.dnf?'selected':''}>Did not finish</option></select></div><div class="field"><label>Format owned</label><select id="editBookFormat"><option value="" ${!b.format?'selected':''}>Not specified</option><option ${b.format==='Physical'?'selected':''}>Physical</option><option ${b.format==='Ebook'?'selected':''}>Ebook</option><option ${b.format==='Audiobook'?'selected':''}>Audiobook</option><option ${b.format==='Multiple'?'selected':''}>Multiple</option></select></div></div><div class="field-row"><div class="field"><label>Ownership</label><select id="editBookOwned"><option value="no" ${!b.owned?'selected':''}>Don't own</option><option value="yes" ${b.owned?'selected':''}>I own it</option></select></div><div class="field"><label>Reading path / order note</label><input id="editBookPath" value="${escapeHtml(b.path||'')}" placeholder="Publication / chronological / recommended"></div></div><div class="field"><label>Notes</label><textarea id="editBookNotes" placeholder="Edition, publication date, notes…">${escapeHtml(b.notes||'')}</textarea></div><button class="btn primary" type="submit" style="width:100%">Save book</button></form><button class="btn ghost" id="removeBook" style="width:100%;margin-top:8px;color:#A64D3A">Remove from my TBR</button>`);
-  $('editBookForm').onsubmit=e=>{e.preventDefault();const ratingInput=$('editBookRating');if(ratingInput.value.trim()!=='' && (!ratingInput.checkValidity() || !Number.isFinite(Number(ratingInput.value)))){ratingInput.reportValidity();return;}b.title=$('editBookTitle').value.trim();b.arc=$('editBookArc').value.trim();b.order=Math.max(1,Number($('editBookOrder').value)||1);const status=$('editBookRead').value;b.read=status==='yes';b.currentlyReading=status==='current';b.onHold=status==='hold';b.dnf=status==='dnf';b.owned=$('editBookOwned').value==='yes';b.format=$('editBookFormat').value;b.path=$('editBookPath').value.trim();b.notes=$('editBookNotes').value.trim();b.rating=$('editBookRating').value.trim()!==''?Math.round(Number($('editBookRating').value)*10)/10:null;if(!b.read)b.rating=null;s.books.sort((a,b)=>a.order-b.order);closeModal();render();toast('Book updated');};
+  $('editBookForm').onsubmit=e=>{e.preventDefault();const ratingInput=$('editBookRating');if(ratingInput.value.trim()!=='' && (!ratingInput.checkValidity() || !Number.isFinite(Number(ratingInput.value)))){ratingInput.reportValidity();return;}b.title=$('editBookTitle').value.trim();b.arc=$('editBookArc').value.trim();b.order=Math.max(1,Number($('editBookOrder').value)||1);const status=$('editBookRead').value;const wasRead=!!b.read;b.read=status==='yes';if(b.read&&!wasRead){b.finishedAt=new Date().toISOString();queuePageLookup(b,s.author);}else if(!b.read&&wasRead){b.finishedAt=null;}b.currentlyReading=status==='current';b.onHold=status==='hold';b.dnf=status==='dnf';b.owned=$('editBookOwned').value==='yes';b.format=$('editBookFormat').value;b.path=$('editBookPath').value.trim();b.notes=$('editBookNotes').value.trim();b.rating=$('editBookRating').value.trim()!==''?Math.round(Number($('editBookRating').value)*10)/10:null;if(!b.read)b.rating=null;s.books.sort((a,b)=>a.order-b.order);closeModal();render();toast('Book updated');};
   $('removeBook').onclick=()=>{s.books=s.books.filter(x=>x.id!==b.id);if(!s.books.length)series=series.filter(x=>x.id!==s.id);closeModal();render();toast('Book removed from TBR');};
 };
 function openAddUniverseBook(s){openModal('Add to '+escapeHtml(s.name),`<p class="panel-intro">Add a novel, novella, short story, companion, or newly released book directly into this universe. It will stay grouped here.</p><form id="universeBookForm"><div class="field"><label>Title *</label><input id="newUniverseTitle" required placeholder="Book or short story title"></div><div class="field-row"><div class="field"><label>Author</label><input id="newUniverseAuthor" value="${escapeHtml(s.author)}"></div><div class="field"><label>Sub-series / arc</label><input id="newUniverseArc" placeholder="e.g. Liveship Traders / short story"></div></div><div class="field-row"><div class="field"><label>Insert at position</label><input id="newUniverseOrder" type="number" min="1" value="${s.books.length+1}"></div><div class="field"><label>Story type</label><select id="newUniverseType"><option>Novel</option><option>Novella</option><option>Short story</option><option>Companion</option><option>Collection</option><option>Other</option></select></div></div><div class="field"><label>Notes / source</label><textarea id="newUniverseNotes" placeholder="Publication details or where it fits in the recommended order"></textarea></div><button class="btn primary" type="submit" style="width:100%">Add to universe</button></form>`);$('universeBookForm').onsubmit=e=>{e.preventDefault();const title=$('newUniverseTitle').value.trim();if(s.books.some(b=>b.title.toLowerCase()===title.toLowerCase())){toast('That title is already in this universe');return;}const order=Math.max(1,Number($('newUniverseOrder').value)||s.books.length+1);s.books.forEach(b=>{if(b.order>=order)b.order++;});s.books.push({id:nextId++,title,arc:[$('newUniverseArc').value.trim(),$('newUniverseType').value].filter(Boolean).join(' · '),owned:false,read:false,rating:null,order,notes:$('newUniverseNotes').value.trim(),author:$('newUniverseAuthor').value.trim()});s.expanded=true;s.books.sort((a,b)=>a.order-b.order);closeModal();render();toast('Book or story added to universe');};}
@@ -478,6 +503,196 @@ document.getElementById('papertrailDeleteSelected').onclick=()=>{
   toast(count+' book'+(count===1?'':'s')+' deleted');
 };
 render();
+
+/* Per-book order controls: drag handle works with pointer events on phones. */
+let movingBook=null;
+function movePapertrailBook(sid,bid,direction){
+ const group=series.find(x=>x.id===sid);if(!group)return;
+ group.books.sort((a,b)=>a.order-b.order);
+ const i=group.books.findIndex(x=>x.id===bid),j=i+direction;
+ if(i<0||j<0||j>=group.books.length)return;
+ [group.books[i],group.books[j]]=[group.books[j],group.books[i]];
+ group.books.forEach((b,k)=>b.order=k+1);
+ render();
+}
+const renderWithBookTools=render;
+render=function(){
+ renderWithBookTools();
+ document.querySelectorAll('.book-row[data-book-id]').forEach(row=>{
+  const bid=Number(row.dataset.bookId),group=series.find(s=>s.books.some(b=>b.id===bid));
+  if(!group)return;
+  const tools=document.createElement('div');tools.className='papertrail-book-move';
+  tools.innerHTML='<button type="button" class="papertrail-grip" title="Drag to reorder this book" aria-label="Drag book to reorder">⠿</button><button type="button" data-book-shift="-1" title="Move book up" aria-label="Move book up">↑</button><button type="button" data-book-shift="1" title="Move book down" aria-label="Move book down">↓</button>';
+  row.appendChild(tools);
+  tools.querySelectorAll('[data-book-shift]').forEach(button=>button.addEventListener('click',()=>movePapertrailBook(group.id,bid,Number(button.dataset.bookShift))));
+  const grip=tools.querySelector('.papertrail-grip');
+  grip.addEventListener('pointerdown',e=>{
+   if(e.button!==0)return;
+   movingBook={groupId:group.id,bookId:bid,startY:e.clientY};
+   grip.setPointerCapture(e.pointerId);row.style.opacity='.55';
+  });
+  grip.addEventListener('pointerup',e=>{
+   if(!movingBook)return;
+   const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.book-row[data-book-id]');
+   if(target&&target!==row){
+    const targetId=Number(target.dataset.bookId),g=series.find(x=>x.id===movingBook.groupId);
+    if(g&&g.books.some(b=>b.id===targetId)){
+     g.books.sort((a,b)=>a.order-b.order);
+     const from=g.books.findIndex(b=>b.id===movingBook.bookId),to=g.books.findIndex(b=>b.id===targetId);
+     if(from>=0&&to>=0){const [book]=g.books.splice(from,1);g.books.splice(to,0,book);g.books.forEach((b,i)=>b.order=i+1);}
+    }
+   }
+   movingBook=null;render();
+  });
+  grip.addEventListener('pointercancel',()=>{movingBook=null;row.style.opacity='1';});
+ });
+};
+function csvQuote(value){const str=String(value??'');return '"'+str.replace(/"/g,'""')+'"';}
+const csvHeaders=['series','author','genre','kind','series_order','title','book_author','arc','book_order','owned','read','rating','format','currently_reading','on_hold','dnf','path','notes','finished_at','pages'];
+const csvExport=document.createElement('button');
+csvExport.type='button';csvExport.className='btn';csvExport.textContent='Export CSV';
+const csvImport=document.createElement('button');
+csvImport.type='button';csvImport.className='btn';csvImport.textContent='Import CSV';
+const csvInput=document.createElement('input');
+csvInput.type='file';csvInput.accept='.csv,text/csv';csvInput.className='hidden';
+$('exportLibrary').after(csvExport,csvImport,csvInput);
+csvExport.onclick=()=>{
+ const lines=[csvHeaders.map(csvQuote).join(',')];
+ series.forEach((g,si)=>g.books.slice().sort((a,b)=>a.order-b.order).forEach(b=>{
+ const row=[g.name,g.author,g.genre,g.kind,si+1,b.title,b.author||g.author,b.arc,b.order,b.owned,b.read,b.rating,b.format,b.currentlyReading,b.onHold,b.dnf,b.path,b.notes,b.finishedAt,b.pages];
+ lines.push(row.map(csvQuote).join(','));
+ }));
+ const blob=new Blob(['\ufeff'+lines.join('\r\n')],{type:'text/csv;charset=utf-8'});
+ const url=URL.createObjectURL(blob),link=document.createElement('a');link.href=url;link.download='papertrail-tbr.csv';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+ toast('CSV exported');
+};
+function parsePapertrailCSV(text){
+ const rows=[];let row=[],field='',quoted=false;
+ text=text.replace(/^\ufeff/,'');
+ for(let i=0;i<text.length;i++){
+  const c=text[i];
+  if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++;}else if(c==='"')quoted=false;else field+=c;}
+  else if(c==='"')quoted=true;
+  else if(c===','){row.push(field);field='';}
+  else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(v=>v.trim()))rows.push(row);row=[];field='';}
+  else field+=c;
+ }
+ if(quoted)throw Error('Unclosed CSV quotation');
+ row.push(field);if(row.some(v=>v.trim()))rows.push(row);
+ return rows;
+}
+csvImport.onclick=()=>csvInput.click();
+csvInput.onchange=async()=>{
+ const file=csvInput.files[0];csvInput.value='';if(!file)return;
+ try{
+  const rows=parsePapertrailCSV(await file.text());
+  if(rows.length<2)throw Error('CSV has no books');
+  const headers=rows.shift().map(v=>v.trim().toLowerCase());
+  for(const required of ['series','title'])if(!headers.includes(required))throw Error('Missing '+required+' column');
+  const get=(r,key)=>r[headers.indexOf(key)]??'';
+  const bool=v=>/^(true|yes|1)$/i.test(String(v).trim());
+  const additions=[];const known=new Set();
+  for(const r of rows){
+   const name=get(r,'series').trim(),title=get(r,'title').trim();
+   if(!name||!title)continue;
+   const author=get(r,'author').trim(),key=(name+'|'+author+'|'+title).toLowerCase();
+   if(known.has(key))continue;known.add(key);
+   const ratingText=get(r,'rating').trim();
+   const rating=ratingText===''?null:Number(ratingText);
+   if(rating!==null&&(!Number.isFinite(rating)||rating<0||rating>10||Math.abs(rating*10-Math.round(rating*10))>1e-6))throw Error('Invalid rating for '+title);
+   additions.push({name,title,author,genre:get(r,'genre').trim()||'Fiction',kind:get(r,'kind').trim()||'Series',arc:get(r,'arc').trim(),bookAuthor:get(r,'book_author').trim(),order:Number(get(r,'book_order'))||9999,owned:bool(get(r,'owned')),read:bool(get(r,'read')),rating,format:get(r,'format').trim(),currentlyReading:bool(get(r,'currently_reading')),onHold:bool(get(r,'on_hold')),dnf:bool(get(r,'dnf')),path:get(r,'path'),notes:get(r,'notes'),finishedAt:get(r,'finished_at')||null,pages:Number(get(r,'pages'))||null});
+  }
+  if(!additions.length)throw Error('No valid book rows');
+  if(!confirm('Import '+additions.length+' CSV book rows? Existing books will be kept; matching titles in the same series will be skipped. Export a backup first.'))return;
+  let count=0;
+  additions.forEach(x=>{
+   let group=series.find(g=>g.name.toLowerCase()===x.name.toLowerCase()&&g.author.toLowerCase()===x.author.toLowerCase());
+   if(!group){group={id:nextId++,name:x.name,author:x.author,genre:x.genre,kind:x.kind,expanded:true,books:[]};series.push(group);}
+   if(!genres.includes(x.genre))genres.push(x.genre);
+   if(group.books.some(b=>b.title.toLowerCase()===x.title.toLowerCase()))return;
+   group.books.push({id:nextId++,title:x.title,author:x.bookAuthor||x.author,arc:x.arc,order:x.order,owned:x.owned,read:x.read,rating:x.rating,format:x.format,currentlyReading:x.currentlyReading,onHold:x.onHold,dnf:x.dnf,path:x.path,notes:x.notes,finishedAt:x.finishedAt,pages:x.pages});count++;
+  });
+  series.forEach(g=>{g.books.sort((a,b)=>a.order-b.order);g.books.forEach((b,i)=>b.order=i+1);});
+  render();toast(count+' books imported from CSV');
+ }catch(err){alert('CSV import failed: '+err.message);}
+};
+render();
+</script>
+
+<script>
+/* Challenge state stays local to this phone, alongside the personal library. */
+const challengeStorageKey='papertrail-challenges-v1';
+let challengeGoals={};
+try{const saved=JSON.parse(localStorage.getItem(challengeStorageKey)||'{}');if(saved&&typeof saved==='object')challengeGoals=saved;}catch(e){}
+const challengeCurrentYear=new Date().getFullYear();
+const yearSelect=document.getElementById('challengeYear');
+for(let y=challengeCurrentYear+2;y>=2020;y--){const o=document.createElement('option');o.value=String(y);o.textContent=String(y);if(y===challengeCurrentYear)o.selected=true;yearSelect.appendChild(o);}
+const challengeBookTarget=document.getElementById('challengeTargetBooks');
+const challengePageTarget=document.getElementById('challengePagesPerBook');
+const challengeSummary=document.getElementById('challengeSummary');
+const challengeBooks=document.getElementById('challengeBooks');
+function getChallengeGoal(year){return challengeGoals[year]||{books:27,pages:400};}
+function showChallengeGoal(){const g=getChallengeGoal(yearSelect.value);challengeBookTarget.value=g.books;challengePageTarget.value=g.pages;renderChallenge();}
+yearSelect.addEventListener('change',showChallengeGoal);
+document.getElementById('saveChallenge').addEventListener('click',()=>{
+ if(!challengeBookTarget.reportValidity()||!challengePageTarget.reportValidity())return;
+ const books=Number(challengeBookTarget.value),pages=Number(challengePageTarget.value);
+ if(!Number.isInteger(books)||!Number.isInteger(pages)||books<1||pages<1)return;
+ challengeGoals[yearSelect.value]={books,pages};
+ try{localStorage.setItem(challengeStorageKey,JSON.stringify(challengeGoals));}catch(e){alert('Challenge settings could not be saved on this device.');return;}
+ renderChallenge();toast('Reading challenge saved');
+});
+const pageLookupPending=new Set();
+async function lookupBookPages(book,author){
+ if(!navigator.onLine||book.pages>0||pageLookupPending.has(book.id))return;
+ pageLookupPending.add(book.id);
+ try{
+  const url='https://openlibrary.org/search.json?'+new URLSearchParams({title:book.title,author:book.author||author||'',limit:'8',fields:'title,author_name,number_of_pages_median'});
+  const response=await fetch(url,{signal:AbortSignal.timeout(12000)});
+  if(!response.ok)throw Error('No result');
+  const results=(await response.json()).docs||[];
+  const norm=x=>String(x||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+  const exact=results.find(x=>norm(x.title)===norm(book.title)&&Number(x.number_of_pages_median)>0);
+  const result=exact||results.find(x=>Number(x.number_of_pages_median)>0&&norm(x.title).includes(norm(book.title)));
+  if(result&&Number(result.number_of_pages_median)>0){
+   book.pages=Math.round(Number(result.number_of_pages_median));
+   book.pagesSource='Open Library estimate';
+   render();
+  }
+ }catch(e){}finally{pageLookupPending.delete(book.id);renderChallenge();}
+}
+function queuePageLookup(book,author){if(!book.pages){lookupBookPages(book,author);}}
+function renderChallenge(){
+ if(!challengeSummary)return;
+ const year=Number(yearSelect.value)||challengeCurrentYear,g=getChallengeGoal(year);
+ const finished=series.flatMap(group=>group.books.map(book=>({book,author:group.author,series:group.name}))).filter(x=>x.book.read&&x.book.finishedAt&&new Date(x.book.finishedAt).getFullYear()===year);
+ const pages=finished.reduce((total,x)=>total+(Number(x.book.pages)||0),0);
+ const missing=finished.filter(x=>!(Number(x.book.pages)>0));
+ const total=g.books*g.pages,equiv=pages/g.pages,pct=Math.min(100,total?pages/total*100:0);
+ challengeSummary.innerHTML='<div class="challenge-stats"><div><strong>'+pages.toLocaleString()+'</strong><span>pages counted</span></div><div><strong>'+equiv.toFixed(2)+'</strong><span>equivalent books</span></div><div><strong>'+total.toLocaleString()+'</strong><span>target pages</span></div><div><strong>'+pct.toFixed(1)+'%</strong><span>complete</span></div></div><p class="panel-intro">'+finished.length+' finished book(s) in '+year+(missing.length?' · '+missing.length+' missing page counts (not counted yet)':'')+'</p>';
+ document.getElementById('challengeProgressFill').style.width=pct+'%';
+ document.getElementById('challengeRange').textContent='1 January '+year+' – 31 December '+year+' · '+g.books+' books × '+g.pages+' pages = '+total.toLocaleString()+' pages';
+ challengeBooks.innerHTML=finished.length?finished.sort((a,b)=>new Date(b.book.finishedAt)-new Date(a.book.finishedAt)).map(x=>'<div class="challenge-book"><div><strong>'+escapeHtml(x.book.title)+'</strong><small>'+escapeHtml(x.series)+' · '+new Date(x.book.finishedAt).toLocaleDateString()+'</small></div><div class="challenge-book-controls"><input aria-label="Page count for '+escapeHtml(x.book.title)+'" type="number" inputmode="numeric" min="1" max="100000" step="1" data-challenge-pages="'+x.book.id+'" value="'+(x.book.pages||'')+'" placeholder="Pages"><button class="btn soft" type="button" data-lookup-pages="'+x.book.id+'">Look up</button></div></div>').join(''):'<p class="panel-intro">No books recorded as finished in this year yet. Mark a book Read on your TBR to start tracking.</p>';
+ challengeBooks.querySelectorAll('[data-challenge-pages]').forEach(input=>input.addEventListener('change',()=>{
+  const item=series.flatMap(g=>g.books).find(b=>String(b.id)===input.dataset.challengePages);
+  if(!item)return;
+  const v=Number(input.value);
+  if(input.value.trim()!==''&&(!Number.isInteger(v)||v<1||v>100000)){input.reportValidity();return;}
+  item.pages=input.value.trim()===''?null:v;item.pagesSource='Manual';
+  render();
+ }));
+ challengeBooks.querySelectorAll('[data-lookup-pages]').forEach(button=>button.addEventListener('click',()=>{
+  const group=series.find(g=>g.books.some(b=>String(b.id)===button.dataset.lookupPages));
+  const book=group?.books.find(b=>String(b.id)===button.dataset.lookupPages);
+  if(!book)return;
+  book.pages=null;lookupBookPages(book,group.author);
+  button.textContent='Searching…';
+ }));
+}
+const challengeRenderBase=render;
+render=function(){challengeRenderBase();renderChallenge();};
+showChallengeGoal();
+// Backfill no dates intentionally: do not invent when older books were completed.
 </script>
 </body>
 </html>
