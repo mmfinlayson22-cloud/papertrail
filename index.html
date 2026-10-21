@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>TBR Library</title>
+<title>papertrail</title>
+<meta name="theme-color" content="#36574A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <style>
 :root {
   --site-primary: #36574A;
@@ -250,6 +255,15 @@ try{const savedLibrary=localStorage.getItem(papertrailStorageKey);if(savedLibrar
 const renderBeforeAutosave=render;
 render=function(){renderBeforeAutosave();savePapertrailLibrary();};
 render();renderCatalog();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(err => {
+      console.warn('Offline caching is unavailable:', err);
+    });
+  });
+}
 </script>
 </body>
 </html>
