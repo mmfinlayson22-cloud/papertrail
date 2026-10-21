@@ -157,6 +157,26 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
   .footer-note{line-height:1.5;padding:0 8px;margin-top:20px;}
 }
 </style>
+
+<style>
+/* Phone-first book rows and search results */
+@media (max-width: 700px) {
+  .book-row {display:grid!important;grid-template-columns:30px minmax(0,1fr) 42px!important;gap:8px!important;align-items:start!important}
+  .book-row:has([data-bulk-book]) {grid-template-columns:30px 20px minmax(0,1fr) 42px!important}
+  .book-row:has([data-bulk-book]) > :nth-child(1) {grid-column:1}
+  .book-row:has([data-bulk-book]) > :nth-child(2) {grid-column:2}
+  .book-row:has([data-bulk-book]) > :nth-child(3) {grid-column:3;min-width:0}
+  .book-row .book-title {overflow-wrap:break-word!important;word-break:normal!important;white-space:normal!important;font-size:14px!important;line-height:1.45!important}
+  .book-row .book-sub {overflow-wrap:break-word;word-break:normal}
+  .book-row:has([data-bulk-book]) .status {grid-column:3!important;grid-row:auto!important}
+  .book-row:has([data-bulk-book]) .icon-btn {grid-column:4!important;grid-row:1/span 2!important}
+  .result-card {display:flex!important;flex-direction:column!important;align-items:stretch!important;min-width:0}
+  .result-card > div:first-child {min-width:0;width:100%}
+  .result-card h4,.result-card p {overflow-wrap:break-word!important;word-break:normal!important}
+  .result-actions {display:flex;flex-wrap:wrap;gap:8px;width:100%}
+  .result-actions .btn {flex:1;min-width:0;white-space:normal}
+}
+</style>
 </head>
 <body>
 <div class="app-root" id="appRoot">
@@ -230,6 +250,55 @@ $('catalogSearch').addEventListener('input',renderCatalog);
 
 let onlineSearchTimer=0, onlineSearchSequence=0, onlineResults=[];
 function onlineEscape(v){return escapeHtml(String(v??''));}
+
+async function addOpenLibrarySeries(book) {
+ const author=(book.author_name||[])[0]||'Unknown author';
+ const proposed=(book.series||[])[0]||'';
+ openModal('Add series / universe',`<p class="panel-intro">Find related books online and choose which to add. Open Library may not label every series accurately; review the results and reading order.</p>
+ <div class="field"><label>Series / universe name</label><input id="olSeriesName" value="${onlineEscape(proposed)}" placeholder="e.g. Mistborn" required></div>
+ <div class="field"><label>Author</label><input id="olSeriesAuthor" value="${onlineEscape(author)}" required></div>
+ <div class="field"><label>Genre</label><input id="olSeriesGenre" value="Fantasy" required></div>
+ <button class="btn primary" type="button" id="olFindSeries" style="width:100%">Find books in series</button>
+ <div id="olSeriesResults" aria-live="polite"></div>`);
+ $('olFindSeries').onclick=async()=>{
+   const name=$('olSeriesName').value.trim(),writer=$('olSeriesAuthor').value.trim();
+   if(!name||!writer){toast('Enter a series name and author');return;}
+   const resultBox=$('olSeriesResults');
+   resultBox.textContent='Searching Open Library…';
+   try{
+     const query='https://openlibrary.org/search.json?'+new URLSearchParams({q:'series:"'+name+'" AND author:"'+writer+'"',limit:'100',fields:'key,title,author_name,first_publish_year,series'});
+     let response=await fetch(query);
+     if(!response.ok)throw Error('Search failed');
+     let data=await response.json();
+     let docs=(data.docs||[]).filter(x=>x.title);
+     // Fall back to text matching for works without structured series metadata.
+     if(docs.length<2){
+       const fallback=await fetch('https://openlibrary.org/search.json?'+new URLSearchParams({q:name+' '+writer,limit:'100',fields:'key,title,author_name,first_publish_year,series'}));
+       if(fallback.ok){
+         const extra=(await fallback.json()).docs||[];
+         docs=[...docs,...extra.filter(x=>x.title && (x.series||[]).some(v=>v.toLowerCase().includes(name.toLowerCase())))];
+       }
+     }
+     const seen=new Set();
+     docs=docs.filter(x=>{const key=x.title.toLowerCase().trim();if(seen.has(key))return false;seen.add(key);return true;});
+     docs.sort((a,b)=>(a.first_publish_year||9999)-(b.first_publish_year||9999)||a.title.localeCompare(b.title));
+     if(!docs.length){resultBox.innerHTML='<p class="panel-intro">No confirmed series titles found. Try a different series name, or add books individually. Open Library has incomplete series metadata.</p>';return;}
+     resultBox.innerHTML='<p class="panel-intro">'+docs.length+' potential books found. Review the list before adding. Listed in approximate publication-year order, not a guaranteed recommended reading order.</p><div class="book-select-list">'+docs.map((b,i)=>`<label class="book-select"><input type="checkbox" value="${i}" checked><span><b>${onlineEscape(b.title)}</b><small>${b.first_publish_year||'Year unknown'}</small></span></label>`).join('')+'</div><button class="btn primary" id="olAddSelected" type="button" style="width:100%;margin-top:12px">Add selected books to TBR</button>';
+     $('olAddSelected').onclick=()=>{
+       const chosen=[...resultBox.querySelectorAll('input:checked')].map(el=>docs[Number(el.value)]);
+       if(!chosen.length){toast('Select at least one book');return;}
+       const genre=$('olSeriesGenre').value.trim()||'Fiction';
+       let group=series.find(x=>x.name.toLowerCase()===name.toLowerCase()&&x.author.toLowerCase()===writer.toLowerCase());
+       if(!group){group={id:nextId++,name,author:writer,genre,kind:'Series',expanded:true,books:[]};series.push(group);}
+       if(!genres.includes(genre))genres.push(genre);
+       let count=0;
+       chosen.forEach(b=>{if(!group.books.some(x=>x.title.toLowerCase()===b.title.toLowerCase())){group.books.push({id:nextId++,title:b.title,arc:name,author:writer,owned:false,read:false,rating:null,order:group.books.length+1});count++;}});
+       group.expanded=true;closeModal();switchTab('tbr');render();toast(count+' books added');
+     };
+   }catch(e){resultBox.textContent='Could not search right now. Check internet and try again.';}
+ };
+}
+
 async function searchOpenLibrary(){
  const q=$('catalogSearch').value.trim(), box=$('onlineCatalogResults'),seq=++onlineSearchSequence;
  if(q.length<2){box.innerHTML='<p class="panel-intro">Search any title or author to find books from Open Library. Internet required for searching; your TBR works offline.</p>';return;}
@@ -240,7 +309,7 @@ async function searchOpenLibrary(){
   const data=await response.json();
   if(seq!==onlineSearchSequence)return;
   onlineResults=(data.docs||[]).filter(b=>b.title).slice(0,30);
-  box.innerHTML=onlineResults.length?'<p class="panel-intro">'+onlineResults.length+' results from Open Library</p>'+onlineResults.map((b,i)=>`<div class="result-card"><div><div class="result-kind">Book${b.first_publish_year?' · '+b.first_publish_year:''}</div><h4>${onlineEscape(b.title)}</h4><p>${onlineEscape((b.author_name||[]).join(', ')||'Unknown author')}${b.series?.length?' · '+onlineEscape(b.series[0]):''}</p></div><div class="result-actions"><button class="btn soft" data-online-book="${i}" type="button">Add to TBR</button></div></div>`).join(''):'<div class="empty"><strong>No matching books found</strong>Try another spelling or add a book manually.</div>';
+  box.innerHTML=onlineResults.length?'<p class="panel-intro">'+onlineResults.length+' results from Open Library</p>'+onlineResults.map((b,i)=>`<div class="result-card"><div><div class="result-kind">Book${b.first_publish_year?' · '+b.first_publish_year:''}</div><h4>${onlineEscape(b.title)}</h4><p>${onlineEscape((b.author_name||[]).join(', ')||'Unknown author')}${b.series?.length?' · '+onlineEscape(b.series[0]):''}</p></div><div class="result-actions"><button class="btn soft" data-online-book="${i}" type="button">Add book</button><button class="btn soft" data-online-series="${i}" type="button">Add series / universe</button></div></div>`).join(''):'<div class="empty"><strong>No matching books found</strong>Try another spelling or add a book manually.</div>';
  } catch(err){if(seq===onlineSearchSequence)box.innerHTML='<div class="notice">Online search is unavailable right now. Check your connection or use Add manually below.</div>';}
 }
 $('catalogSearch').addEventListener('input',()=>{
@@ -248,6 +317,8 @@ $('catalogSearch').addEventListener('input',()=>{
  onlineSearchTimer=setTimeout(searchOpenLibrary,350);
 });
 $('onlineCatalogResults').addEventListener('click',e=>{
+ const seriesButton=e.target.closest('[data-online-series]');
+ if(seriesButton){addOpenLibrarySeries(onlineResults[Number(seriesButton.dataset.onlineSeries)]);return;}
  const btn=e.target.closest('[data-online-book]');if(!btn)return;
  const b=onlineResults[Number(btn.dataset.onlineBook)];if(!b)return;
  const title=b.title,author=(b.author_name||[])[0]||'Unknown author',name=(b.series||[])[0]||title;
