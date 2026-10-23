@@ -202,7 +202,7 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
 .papertrail-book-status{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0}
 .papertrail-owned-label{display:block;color:#1c5e91;font-size:11px;font-weight:800;line-height:1.3}
 @media(max-width:700px){.book-row .papertrail-book-status{grid-column:2;grid-row:auto;align-items:flex-start}.book-row:has([data-bulk-book]) .papertrail-book-status{grid-column:3}}
-</style></head>
+</style><style>.papertrail-genre-heading{display:flex;align-items:center;gap:8px;justify-content:space-between}.papertrail-genre-toggle{min-width:0;flex:1}.papertrail-genre-order{display:inline-flex;gap:5px;flex-shrink:0}.papertrail-genre-order button{border:1px solid #b6c7bc;border-radius:8px;background:#fff;color:#24362b;font-weight:700;font-size:18px;min-width:38px;min-height:38px;cursor:pointer}@media(max-width:600px){.papertrail-genre-heading{gap:5px}.papertrail-genre-count{font-size:11px}.papertrail-genre-order button{min-width:34px;min-height:38px}}</style></head>
 <body>
 <div class="app-root" id="appRoot">
   <header class="topbar">
@@ -215,7 +215,7 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
       <div class="page-head"><div><div class="eyebrow">The next chapter starts here</div><h2>Your reading list</h2><p class="subtitle">Every world you want to get lost in, in the order you want to visit them. Drag a series into place, then open it to fine-tune the books.</p></div><button class="btn primary" id="addFromHeader">＋ Add to my TBR</button></div>
       <div class="stats"><div class="stat"><div class="label">On your list</div><div class="value" id="statBooks">12</div><div class="hint">books across all worlds</div></div><div class="stat"><div class="label">Worlds & series</div><div class="value" id="statSeries">4</div><div class="hint">series and universes</div></div><div class="stat"><div class="label">To be Read</div><div class="value" id="statUnread">0</div><div class="hint">books still to read</div></div><div class="stat"><div class="label">Read</div><div class="value" id="statRead">0</div><div class="hint">books completed</div></div></div>
       <div class="toolbar"><div class="searchbox"><span>⌕</span><input id="tbrSearch" placeholder="Find a book, series, author…" /></div><select id="sortMode"><option value="manual">My order</option><option value="name">Series A–Z</option><option value="rating">Highest rated</option><option value="progress">Most read</option></select></div>
-      <section class="filter-panel" aria-label="Filter your TBR"><div class="filter-heading"><strong>Filter your list</strong><button class="btn ghost" id="clearFilters" type="button">Clear filters</button></div><div class="filter-grid"><label for="genreFilter">Genre<select id="genreFilter"><option value="all">All genres</option></select></label><label for="authorFilter">Author<select id="authorFilter"><option value="all">All authors</option></select></label><label for="seriesFilter">Series / universe<select id="seriesFilter"><option value="all">All series & universes</option></select></label></div></section>
+      <section class="filter-panel" aria-label="Filter your TBR"><div class="filter-heading"><strong>Filter your list</strong><button class="btn ghost" id="clearFilters" type="button">Clear filters</button></div><div class="filter-grid"><label for="genreFilter">Genre<select id="genreFilter"><option value="all">All genres</option></select></label><label for="authorFilter">Author<select id="authorFilter"><option value="all">All authors</option></select></label><label for="seriesFilter">Series / universe<select id="seriesFilter"><option value="all">All series & universes</option></select></label><label for="readingProgressFilter">Reading progress<select id="readingProgressFilter"><option value="all">All series</option><option value="in-progress">Started but unfinished</option><option value="completed">Completed series</option><option value="not-started">Not started series</option></select></label></div></section>
       <div class="genre-chips" id="genreChips"><button class="chip active" data-genre="all">All genres</button><button class="chip" id="manageGenres">＋ Manage genres</button></div>
       <div id="seriesSections"></div>
       <div class="footer-note" id="saveStatus">Your list saves automatically on this device and browser. You and your wife will each have a separate list on your own phone. To open papertrail without internet, it still needs to be hosted and installed with offline caching enabled.</div>
@@ -231,7 +231,7 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
       <div class="page-head"><div><div class="eyebrow">January — December</div><h2>Reading challenge</h2><p class="subtitle">Set your yearly goal in equivalent books. Finished pages count towards your target, including long books.</p></div></div>
       <div class="panel challenge-panel">
         <div class="challenge-controls">
-          <label>Challenge year <select id="challengeYear"></select></label>
+          <label>Challenge year <input id="challengeYear" type="number" inputmode="numeric" min="1" max="9999" step="1" aria-label="Challenge year"></label>
           <label>Target books <input id="challengeTargetBooks" type="number" min="1" max="10000" step="1" value="27"></label>
           <label>Pages per book <input id="challengePagesPerBook" type="number" min="1" max="100000" step="1" value="400"></label>
           <button class="btn primary" type="button" id="saveChallenge">Save goal</button>
@@ -272,14 +272,32 @@ function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':
 function updateStats(){ const books=allBooks(); $('statBooks').textContent=books.length; $('statSeries').textContent=series.length; $('statUnread').textContent=books.filter(book=>!book.read).length; $('statRead').textContent=books.filter(book=>!!book.read).length; }
 function refreshGenreControls(){const values=[...new Set([...genres,...series.map(s=>s.genre).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));const filter=$('genreFilter'),previous=filter.value;filter.innerHTML='<option value="all">All genres</option>'+values.map(g=>`<option value="${escapeHtml(g)}">${escapeHtml(g)}</option>`).join('');filter.value=values.includes(previous)?previous:'all';const authors=[...new Set(series.map(s=>s.author).filter(Boolean))].sort((a,b)=>a.localeCompare(b));const authorFilter=$('authorFilter'),oldAuthor=authorFilter.value;authorFilter.innerHTML='<option value="all">All authors</option>'+authors.map(a=>`<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');authorFilter.value=authors.includes(oldAuthor)?oldAuthor:'all';const names=[...new Set(series.map(s=>s.name).filter(Boolean))].sort((a,b)=>a.localeCompare(b));const seriesFilter=$('seriesFilter'),oldSeries=seriesFilter.value;seriesFilter.innerHTML='<option value="all">All series & universes</option>'+names.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('');seriesFilter.value=names.includes(oldSeries)?oldSeries:'all';const chips=$('genreChips'),active=activeGenre;chips.innerHTML='<button class="chip '+(active==='all'?'active':'')+'" data-genre="all">All genres</button>'+values.map(g=>`<button class="chip ${active===g?'active':''}" data-genre="${escapeHtml(g)}" title="${escapeHtml(g)}">${escapeHtml(g)}</button>`).join('')+'<button class="chip" id="manageGenres">＋ Manage genres</button>';const list=$('genreSuggestions');if(list)list.innerHTML=values.map(g=>`<option value="${escapeHtml(g)}"></option>`).join('');}
 const collapsedPapertrailGenres=new Set();
-function render(){refreshGenreControls();updateStats(); const q=$('tbrSearch').value.toLowerCase(); const genre=$('genreFilter').value,author=$('authorFilter').value,seriesName=$('seriesFilter').value; let list=series.filter(s=>(activeGenre==='all'||s.genre===activeGenre)&&(genre==='all'||s.genre===genre)&&(author==='all'||s.author===author)&&(seriesName==='all'||s.name===seriesName)&&[s.name,s.author,s.genre,...s.books.map(b=>b.title)].join(' ').toLowerCase().includes(q));const sort=$('sortMode').value;if(sort==='name')list.sort((a,b)=>a.name.localeCompare(b.name));if(sort==='rating')list.sort((a,b)=>(parseFloat(avg(b))||0)-(parseFloat(avg(a))||0));if(sort==='progress')list.sort((a,b)=>readCount(b)/b.books.length-readCount(a)/a.books.length);const groups={};list.forEach(s=>(groups[s.genre]??=[]).push(s));let html='';Object.keys(groups).sort((a,b)=>a.localeCompare(b)).forEach(g=>{html+=`<div class="section-title papertrail-genre-heading"><button type="button" class="papertrail-genre-toggle" data-collapse-genre="${escapeHtml(g)}" aria-expanded="${!collapsedPapertrailGenres.has(g)}" aria-label="${collapsedPapertrailGenres.has(g)?'Expand':'Collapse'} ${escapeHtml(g)}"><span class="papertrail-genre-chevron">${collapsedPapertrailGenres.has(g)?'▸':'▾'}</span><strong>${escapeHtml(g)}</strong><span class="papertrail-genre-count">${groups[g].length} ${groups[g].length===1?'series':'series & worlds'}</span></button></div><div class="series-list ${collapsedPapertrailGenres.has(g)?'hidden':''}">`;groups[g].forEach(s=>{const read=readCount(s),rating=avg(s);html+=`<article class="series-card" draggable="true" data-series="${s.id}"><div class="drag" title="Drag to reorder">⠿</div><div class="series-info"><h4 class="series-name"><button type="button" class="papertrail-series-name-toggle" data-action="toggle" data-id="${s.id}" aria-expanded="${!!s.expanded}" title="${s.expanded?'Collapse':'Expand'} books in this series">${escapeHtml(s.name)} <span aria-hidden="true">${s.expanded?'▾':'▸'}</span></button></h4><div class="series-meta"><span>${escapeHtml(s.author)}</span><span class="genre-tag">${escapeHtml(s.genre)}</span><span>${s.books.length} books</span><span>${read}/${s.books.length} read</span></div></div><div class="series-rating"><div class="rating-num">${rating}<em> / 10</em></div><div class="rating-caption">${read?`${read} rated/read`:'No ratings yet'}</div><div class="progress"><span style="width:${read/s.books.length*100}%"></span></div></div><div class="card-actions"><button class="icon-btn" title="Move up" data-action="up" data-id="${s.id}">↑</button><button class="icon-btn" title="Move down" data-action="down" data-id="${s.id}">↓</button><button class="icon-btn" title="Edit series" data-action="edit" data-id="${s.id}">✎</button><button class="icon-btn" title="${s.expanded?'Collapse':'Expand'} books" aria-label="${s.expanded?'Collapse':'Expand'} books in ${escapeHtml(s.name)}" aria-expanded="${!!s.expanded}" data-action="toggle" data-id="${s.id}">${s.expanded?'−':'＋'}</button></div>`;if(s.expanded){html+=`<div class="book-list">`;s.books.sort((a,b)=>a.order-b.order).forEach((b,i)=>{html+=`<div class="book-row ${b.owned?'papertrail-owned-book':''} ${b.read?'papertrail-read-book':''}" data-book-id="${b.id}"><span class="book-num">${i+1}</span><span><span class="book-title">${escapeHtml(b.title)}</span><span class="book-sub">${escapeHtml(b.arc||s.name)}</span>${b.rating!=null?`<span class="papertrail-book-rating">★ ${Number(b.rating).toFixed(1)} / 10</span>`:''}</span><span class="papertrail-book-status"><span class="status ${b.read?'read':''}">${b.read?'✓ Read':'To read'}</span>${b.owned?'<span class="papertrail-owned-label">Owned</span>':''}</span><button class="icon-btn" title="Edit book" data-action="book" data-id="${s.id}" data-book="${b.id}">✎</button></div>`;});html+='</div>';}html+='</article>';});html+='</div>';});$('seriesSections').innerHTML=html||'<div class="empty"><strong>No books found just yet</strong>Try another search or add your next universe.</div>';attachDrag();}
+const papertrailGenreOrderKey='papertrail-genre-order-v1';
+let papertrailGenreOrder=[];
+try { const saved=JSON.parse(localStorage.getItem(papertrailGenreOrderKey)||'[]');if(Array.isArray(saved))papertrailGenreOrder=saved.filter(x=>typeof x==='string'); }catch(e){}
+function orderedPapertrailGenres(names){
+ const all=[...new Set(names)];
+ all.sort((a,b)=>{const ai=papertrailGenreOrder.indexOf(a),bi=papertrailGenreOrder.indexOf(b);return (ai<0?999999:ai)-(bi<0?999999:bi)||a.localeCompare(b);});
+ return all;
+}
+function movePapertrailGenre(name,step){
+ const all=orderedPapertrailGenres([...genres,...series.map(s=>s.genre).filter(Boolean)]);
+ const index=all.indexOf(name),destination=index+step;
+ if(index<0||destination<0||destination>=all.length)return;
+ [all[index],all[destination]]=[all[destination],all[index]];
+ papertrailGenreOrder=all;
+ try{localStorage.setItem(papertrailGenreOrderKey,JSON.stringify(all));}catch(e){alert('Genre order could not be saved on this device.');}
+ render();
+}
+
+function render(){refreshGenreControls();updateStats(); const q=$('tbrSearch').value.toLowerCase(); const genre=$('genreFilter').value,author=$('authorFilter').value,seriesName=$('seriesFilter').value;const progressFilter=$('readingProgressFilter').value; let list=series.filter(s=>(activeGenre==='all'||s.genre===activeGenre)&&(genre==='all'||s.genre===genre)&&(author==='all'||s.author===author)&&(seriesName==='all'||s.name===seriesName)&&(progressFilter==='all'||(progressFilter==='in-progress'&&s.books.some(b=>b.read)&&s.books.some(b=>!b.read))||(progressFilter==='completed'&&s.books.length>0&&s.books.every(b=>b.read))||(progressFilter==='not-started'&&s.books.length>0&&s.books.every(b=>!b.read)))&&[s.name,s.author,s.genre,...s.books.map(b=>b.title)].join(' ').toLowerCase().includes(q));const sort=$('sortMode').value;if(sort==='name')list.sort((a,b)=>a.name.localeCompare(b.name));if(sort==='rating')list.sort((a,b)=>(parseFloat(avg(b))||0)-(parseFloat(avg(a))||0));if(sort==='progress')list.sort((a,b)=>readCount(b)/b.books.length-readCount(a)/a.books.length);const groups={};list.forEach(s=>(groups[s.genre]??=[]).push(s));let html='';orderedPapertrailGenres(Object.keys(groups)).forEach(g=>{html+=`<div class="section-title papertrail-genre-heading"><button type="button" class="papertrail-genre-toggle" data-collapse-genre="${escapeHtml(g)}" aria-expanded="${!collapsedPapertrailGenres.has(g)}" aria-label="${collapsedPapertrailGenres.has(g)?'Expand':'Collapse'} ${escapeHtml(g)}"><span class="papertrail-genre-chevron">${collapsedPapertrailGenres.has(g)?'▸':'▾'}</span><strong>${escapeHtml(g)}</strong><span class="papertrail-genre-count">${groups[g].length} ${groups[g].length===1?'series':'series & worlds'}</span></button><span class="papertrail-genre-order"><button type="button" data-move-genre="up" data-genre-name="${escapeHtml(g)}" aria-label="Move ${escapeHtml(g)} up" title="Move genre up">↑</button><button type="button" data-move-genre="down" data-genre-name="${escapeHtml(g)}" aria-label="Move ${escapeHtml(g)} down" title="Move genre down">↓</button></span></div><div class="series-list ${collapsedPapertrailGenres.has(g)?'hidden':''}">`;groups[g].forEach(s=>{const read=readCount(s),rating=avg(s);html+=`<article class="series-card" draggable="true" data-series="${s.id}"><div class="drag" title="Drag to reorder">⠿</div><div class="series-info"><h4 class="series-name"><button type="button" class="papertrail-series-name-toggle" data-action="toggle" data-id="${s.id}" aria-expanded="${!!s.expanded}" title="${s.expanded?'Collapse':'Expand'} books in this series">${escapeHtml(s.name)} <span aria-hidden="true">${s.expanded?'▾':'▸'}</span></button></h4><div class="series-meta"><span>${escapeHtml(s.author)}</span><span class="genre-tag">${escapeHtml(s.genre)}</span><span>${s.books.length} books</span><span>${read}/${s.books.length} read</span></div></div><div class="series-rating"><div class="rating-num">${rating}<em> / 10</em></div><div class="rating-caption">${read?`${read} rated/read`:'No ratings yet'}</div><div class="progress"><span style="width:${read/s.books.length*100}%"></span></div></div><div class="card-actions"><button class="icon-btn" title="Move up" data-action="up" data-id="${s.id}">↑</button><button class="icon-btn" title="Move down" data-action="down" data-id="${s.id}">↓</button><button class="icon-btn" title="Edit series" data-action="edit" data-id="${s.id}">✎</button><button class="icon-btn" title="${s.expanded?'Collapse':'Expand'} books" aria-label="${s.expanded?'Collapse':'Expand'} books in ${escapeHtml(s.name)}" aria-expanded="${!!s.expanded}" data-action="toggle" data-id="${s.id}">${s.expanded?'−':'＋'}</button></div>`;if(s.expanded){html+=`<div class="book-list">`;s.books.sort((a,b)=>a.order-b.order).forEach((b,i)=>{html+=`<div class="book-row ${b.owned?'papertrail-owned-book':''} ${b.read?'papertrail-read-book':''}" data-book-id="${b.id}"><span class="book-num">${i+1}</span><span><span class="book-title">${escapeHtml(b.title)}</span><span class="book-sub">${escapeHtml(b.arc||s.name)}</span>${b.rating!=null?`<span class="papertrail-book-rating">★ ${Number(b.rating).toFixed(1)} / 10</span>`:''}</span><span class="papertrail-book-status"><span class="status ${b.read?'read':''}">${b.read?'✓ Read':'To read'}</span>${b.owned?'<span class="papertrail-owned-label">Owned</span>':''}</span><button class="icon-btn" title="Edit book" data-action="book" data-id="${s.id}" data-book="${b.id}">✎</button></div>`;});html+='</div>';}html+='</article>';});html+='</div>';});$('seriesSections').innerHTML=html||'<div class="empty"><strong>No books found just yet</strong>Try another search or add your next universe.</div>';attachDrag();}
 function attachDrag(){document.querySelectorAll('[data-series]').forEach(el=>{el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',el.dataset.series);el.style.opacity='.5'});el.addEventListener('dragend',()=>el.style.opacity='1');el.addEventListener('dragover',e=>e.preventDefault());el.addEventListener('drop',e=>{e.preventDefault();const from=Number(e.dataTransfer.getData('text/plain')),to=Number(el.dataset.series);if(from===to)return;const a=series.findIndex(s=>s.id===from),b=series.findIndex(s=>s.id===to);const moved=series.splice(a,1)[0];series.splice(b,0,moved);render();});});}
 function switchTab(tab){$('tbrPage').classList.toggle('hidden',tab!=='tbr');$('searchPage').classList.toggle('hidden',tab!=='search');$('challengePage').classList.toggle('hidden',tab!=='challenge');if(tab==='challenge')renderChallenge();document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='search')renderCatalog();}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
 $('quickAdd').onclick=$('addFromHeader').onclick=()=>switchTab('search');
- $('tbrSearch').addEventListener('input',render);$('genreFilter').addEventListener('change',()=>{activeGenre='all';document.querySelectorAll('.chip[data-genre]').forEach(c=>c.classList.toggle('active',c.dataset.genre==='all'));render();});$('authorFilter').addEventListener('change',render);$('seriesFilter').addEventListener('change',render);$('clearFilters').addEventListener('click',()=>{$('genreFilter').value='all';$('authorFilter').value='all';$('seriesFilter').value='all';activeGenre='all';document.querySelectorAll('.chip[data-genre]').forEach(c=>c.classList.toggle('active',c.dataset.genre==='all'));render();});$('sortMode').addEventListener('change',render);
+ $('tbrSearch').addEventListener('input',render);$('genreFilter').addEventListener('change',()=>{activeGenre='all';document.querySelectorAll('.chip[data-genre]').forEach(c=>c.classList.toggle('active',c.dataset.genre==='all'));render();});$('authorFilter').addEventListener('change',render);$('seriesFilter').addEventListener('change',render);$('readingProgressFilter').addEventListener('change',render);$('clearFilters').addEventListener('click',()=>{$('genreFilter').value='all';$('authorFilter').value='all';$('seriesFilter').value='all';$('readingProgressFilter').value='all';activeGenre='all';document.querySelectorAll('.chip[data-genre]').forEach(c=>c.classList.toggle('active',c.dataset.genre==='all'));render();});$('sortMode').addEventListener('change',render);
 $('genreChips').addEventListener('click',e=>{const c=e.target.closest('[data-genre]');if(c){activeGenre=c.dataset.genre;$('genreFilter').value='all';document.querySelectorAll('.chip[data-genre]').forEach(x=>x.classList.toggle('active',x===c));render();}if(e.target.id==='manageGenres')openGenreModal();});
-$('seriesSections').addEventListener('click',e=>{const toggle=e.target.closest('[data-collapse-genre]');if(toggle){const genre=toggle.dataset.collapseGenre;if(collapsedPapertrailGenres.has(genre))collapsedPapertrailGenres.delete(genre);else collapsedPapertrailGenres.add(genre);render();return;}});
+$('seriesSections').addEventListener('click',e=>{const move=e.target.closest('[data-move-genre]');if(move){movePapertrailGenre(move.dataset.genreName,move.dataset.moveGenre==='up'?-1:1);return;}const toggle=e.target.closest('[data-collapse-genre]');if(toggle){const genre=toggle.dataset.collapseGenre;if(collapsedPapertrailGenres.has(genre))collapsedPapertrailGenres.delete(genre);else collapsedPapertrailGenres.add(genre);render();return;}});
 $('seriesSections').addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;const s=series.find(x=>x.id===Number(b.dataset.id));if(!s)return;if(b.dataset.action==='toggle'){s.expanded=!s.expanded;render();}if(b.dataset.action==='edit')openEditSeries(s);if(b.dataset.action==='book'){const book=s.books.find(x=>x.id===Number(b.dataset.book));openEditBook(s,book);}if(b.dataset.action==='up'||b.dataset.action==='down'){const i=series.indexOf(s),j=i+(b.dataset.action==='up'?-1:1);if(j>=0&&j<series.length){series.splice(i,1);series.splice(j,0,s);render();}}});
 function openModal(title,body,foot=''){ $('modalContent').innerHTML=`<div class="modal-head"><h3>${title}</h3><button class="modal-close" id="closeModal">×</button></div>${body}${foot}`;$('modalBackdrop').classList.add('open');$('closeModal').onclick=closeModal;}
 function closeModal(){$('modalBackdrop').classList.remove('open');}
@@ -302,7 +320,7 @@ if(destinationName.toLowerCase()!==s.name.toLowerCase()){
  destination.expanded=true;
  if(!s.books.length)series=series.filter(group=>group.id!==s.id);
 }else{s.books.sort((a,b)=>a.order-b.order);}
-closeModal();render();toast('Book updated');};$('removeBook').onclick=()=>{s.books=s.books.filter(x=>x.id!==b.id);if(!s.books.length)series=series.filter(x=>x.id!==s.id);closeModal();render();toast('Book removed from TBR');};}
+closeModal();render();toast('Book updated');};$('removeBook').onclick=()=>{if(!confirm('Remove "'+b.title+'" from your TBR? This cannot be undone.'))return;s.books=s.books.filter(x=>x.id!==b.id);if(!s.books.length)series=series.filter(x=>x.id!==s.id);closeModal();render();toast('Book removed from TBR');};}
 function openGenreModal(){openModal('Manage genres',`<p class="panel-intro">Genres are free text when adding or editing a book or series. Add common genres here if you'd like them as suggestions.</p><div class="field"><label>New genre suggestion</label><input id="newGenre" placeholder="e.g. Magical realism"></div><button class="btn primary" id="addGenreBtn" style="width:100%">Add suggestion</button><div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:6px">${genres.map(g=>`<span class="genre-tag">${escapeHtml(g)}</span>`).join('')}</div>`);$('addGenreBtn').onclick=()=>{const g=$('newGenre').value.trim();if(g&&!genres.some(x=>x.toLowerCase()===g.toLowerCase())){genres.push(g);closeModal();render();toast('Genre suggestion added');}else toast('Enter a new genre name');};}
 function renderCatalog(){const q=$('catalogSearch').value.toLowerCase();const matches=catalogue.filter(c=>!q||[c.name,c.author,c.genre,...c.books.map(b=>b[0])].join(' ').toLowerCase().includes(q));$('catalogResults').innerHTML=matches.map((c,i)=>`<div class="result-card"><div><div class="result-kind">${c.kind} · ${c.genre}</div><h4>${escapeHtml(c.name)}</h4><p>${escapeHtml(c.author)} · ${c.books.length} books<br>${escapeHtml(c.description)}</p></div><div class="result-actions"><button class="btn soft" data-catalog="${i}">View & add</button></div></div>`).join('')||'';}
 $('catalogSearch').addEventListener('input',renderCatalog);
@@ -439,7 +457,7 @@ if(destinationName.toLowerCase()!==s.name.toLowerCase()){
  if(!s.books.length)series=series.filter(group=>group.id!==s.id);
 }else{s.books.sort((a,b)=>a.order-b.order);}
 closeModal();render();toast('Book updated');};
-  $('removeBook').onclick=()=>{s.books=s.books.filter(x=>x.id!==b.id);if(!s.books.length)series=series.filter(x=>x.id!==s.id);closeModal();render();toast('Book removed from TBR');};
+  $('removeBook').onclick=()=>{if(!confirm('Remove "'+b.title+'" from your TBR? This cannot be undone.'))return;s.books=s.books.filter(x=>x.id!==b.id);if(!s.books.length)series=series.filter(x=>x.id!==s.id);closeModal();render();toast('Book removed from TBR');};
 };
 function openAddUniverseBook(s){openModal('Add to '+escapeHtml(s.name),`<p class="panel-intro">Add a novel, novella, short story, companion, or newly released book directly into this universe. It will stay grouped here.</p><form id="universeBookForm"><div class="field"><label>Title *</label><input id="newUniverseTitle" required placeholder="Book or short story title"></div><div class="field-row"><div class="field"><label>Author</label><input id="newUniverseAuthor" value="${escapeHtml(s.author)}"></div><div class="field"><label>Sub-series / arc</label><input id="newUniverseArc" placeholder="e.g. Liveship Traders / short story"></div></div><div class="field-row"><div class="field"><label>Insert at position</label><input id="newUniverseOrder" type="number" min="1" value="${s.books.length+1}"></div><div class="field"><label>Story type</label><select id="newUniverseType"><option>Novel</option><option>Novella</option><option>Short story</option><option>Companion</option><option>Collection</option><option>Other</option></select></div></div><div class="field"><label>Notes / source</label><textarea id="newUniverseNotes" placeholder="Publication details or where it fits in the recommended order"></textarea></div><button class="btn primary" type="submit" style="width:100%">Add to universe</button></form>`);$('universeBookForm').onsubmit=e=>{e.preventDefault();const title=$('newUniverseTitle').value.trim();if(s.books.some(b=>b.title.toLowerCase()===title.toLowerCase())){toast('That title is already in this universe');return;}const order=Math.max(1,Number($('newUniverseOrder').value)||s.books.length+1);s.books.forEach(b=>{if(b.order>=order)b.order++;});s.books.push({id:nextId++,title,arc:[$('newUniverseArc').value.trim(),$('newUniverseType').value].filter(Boolean).join(' · '),owned:false,read:false,rating:null,order,notes:$('newUniverseNotes').value.trim(),author:$('newUniverseAuthor').value.trim()});s.expanded=true;s.books.sort((a,b)=>a.order-b.order);closeModal();render();toast('Book or story added to universe');};}
 const priorSeriesClick=$('seriesSections').onclick;
@@ -470,90 +488,31 @@ if ('serviceWorker' in navigator) {
 }
 
 /* Bulk book deletion and whole-series deletion. Selection is temporary, never stored. */
-const selectedPapertrailBooks = new Set();
+// Keep series-level deletion without the bulky multi-select toolbar.
 const renderWithStorage = render;
-render = function() {
-  renderWithStorage();
-  const section = document.getElementById('seriesSections');
-  section.querySelectorAll('.series-card[data-series]').forEach(card => {
-    const sid = Number(card.dataset.series);
-    const item = series.find(x => x.id === sid);
-    if (!item) return;
-    const actions = card.querySelector('.card-actions');
-    if (actions) {
-      const del = document.createElement('button');
-      del.type = 'button';
-      del.className = 'icon-btn';
-      del.textContent = '🗑';
-      del.title = 'Delete entire series or universe';
-      del.setAttribute('aria-label', 'Delete entire '+item.name);
-      del.dataset.deleteSeries = String(sid);
-      actions.appendChild(del);
-    }
-    card.querySelectorAll('.book-row').forEach((row,i) => {
-      const book = [...item.books].sort((a,b)=>a.order-b.order)[i];
-      if (!book) return;
-      const label = document.createElement('label');
-      label.style.cssText='display:flex;align-items:center;justify-content:center;min-width:32px;min-height:40px;cursor:pointer';
-      label.title='Select '+book.title+' for bulk deletion';
-      const check = document.createElement('input');
-      check.type='checkbox';
-      check.dataset.bulkBook=String(book.id);
-      check.checked=selectedPapertrailBooks.has(book.id);
-      check.setAttribute('aria-label','Select '+book.title);
-      check.style.cssText='width:20px;height:20px;accent-color:#A64D3A;cursor:pointer';
-      label.appendChild(check);
-      row.insertBefore(label,row.firstChild);
-    });
-  });
-  const toolbar=document.getElementById('papertrailBulkToolbar');
-  if (toolbar) {
-    const available=new Set(allBooks().map(b=>b.id));
-    for (const id of selectedPapertrailBooks) if(!available.has(id))selectedPapertrailBooks.delete(id);
-    toolbar.querySelector('#papertrailSelectionCount').textContent=selectedPapertrailBooks.size+' selected';
-    toolbar.querySelector('#papertrailDeleteSelected').disabled=selectedPapertrailBooks.size===0;
-  }
+render = function(){
+ renderWithStorage();
+ document.querySelectorAll('#seriesSections .series-card[data-series]').forEach(card=>{
+  const item=series.find(x=>x.id===Number(card.dataset.series));
+  const actions=card.querySelector('.card-actions');
+  if(!item||!actions)return;
+  const button=document.createElement('button');
+  button.type='button';button.className='icon-btn';button.textContent='🗑';
+  button.title='Delete entire series or universe';
+  button.setAttribute('aria-label','Delete entire '+item.name);
+  button.dataset.deleteSeries=String(item.id);
+  actions.appendChild(button);
+ });
 };
-const bulkToolbar=document.createElement('div');
-bulkToolbar.id='papertrailBulkToolbar';
-bulkToolbar.style.cssText='display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 14px;margin:12px 0;background:var(--surface);border:1px solid var(--line);border-radius:12px';
-bulkToolbar.innerHTML='<strong style="margin-right:auto">Manage books</strong><span id="papertrailSelectionCount">0 selected</span><button class="btn ghost" id="papertrailSelectVisible" type="button">Select visible books</button><button class="btn ghost" id="papertrailClearSelection" type="button">Clear</button><button class="btn" id="papertrailDeleteSelected" type="button" style="color:#A64D3A;border:1px solid #A64D3A" disabled>Delete selected</button>';
-document.getElementById('seriesSections').before(bulkToolbar);
-document.getElementById('seriesSections').addEventListener('change',e=>{
-  const cb=e.target.closest('[data-bulk-book]');
-  if(!cb)return;
-  const id=Number(cb.dataset.bulkBook);
-  if(cb.checked)selectedPapertrailBooks.add(id);else selectedPapertrailBooks.delete(id);
-  document.getElementById('papertrailSelectionCount').textContent=selectedPapertrailBooks.size+' selected';
-  document.getElementById('papertrailDeleteSelected').disabled=selectedPapertrailBooks.size===0;
-});
 document.getElementById('seriesSections').addEventListener('click',e=>{
-  const btn=e.target.closest('[data-delete-series]');
-  if(!btn)return;
-  const id=Number(btn.dataset.deleteSeries);
-  const item=series.find(x=>x.id===id);
-  if(!item)return;
-  if(!confirm('Delete the entire "'+item.name+'" '+(item.kind||'series')+' and all '+item.books.length+' books from this phone? This cannot be undone.'))return;
-  item.books.forEach(b=>selectedPapertrailBooks.delete(b.id));
-  series=series.filter(x=>x.id!==id);
-  render();
-  toast('Series / universe deleted');
+ const button=e.target.closest('[data-delete-series]');
+ if(!button)return;
+ const item=series.find(x=>x.id===Number(button.dataset.deleteSeries));
+ if(!item)return;
+ if(!confirm('Delete the entire "'+item.name+'" and all '+item.books.length+' books from this phone? This cannot be undone.'))return;
+ series=series.filter(x=>x.id!==item.id);
+ render();toast('Series / universe deleted');
 });
-document.getElementById('papertrailSelectVisible').onclick=()=>{
-  document.querySelectorAll('#seriesSections [data-bulk-book]').forEach(cb=>selectedPapertrailBooks.add(Number(cb.dataset.bulkBook)));
-  render();
-};
-document.getElementById('papertrailClearSelection').onclick=()=>{selectedPapertrailBooks.clear();render();};
-document.getElementById('papertrailDeleteSelected').onclick=()=>{
-  const count=selectedPapertrailBooks.size;
-  if(!count)return;
-  if(!confirm('Delete '+count+' selected book'+(count===1?'':'s')+' from this phone? This cannot be undone.'))return;
-  series.forEach(item=>{item.books=item.books.filter(b=>!selectedPapertrailBooks.has(b.id));});
-  series=series.filter(item=>item.books.length>0);
-  selectedPapertrailBooks.clear();
-  render();
-  toast(count+' book'+(count===1?'':'s')+' deleted');
-};
 render();
 
 /* Per-book order controls: drag handle works with pointer events on phones. */
@@ -678,16 +637,16 @@ let challengeGoals={};
 try{const saved=JSON.parse(localStorage.getItem(challengeStorageKey)||'{}');if(saved&&typeof saved==='object')challengeGoals=saved;}catch(e){}
 const challengeCurrentYear=new Date().getFullYear();
 const yearSelect=document.getElementById('challengeYear');
-for(let y=challengeCurrentYear+2;y>=2020;y--){const o=document.createElement('option');o.value=String(y);o.textContent=String(y);if(y===challengeCurrentYear)o.selected=true;yearSelect.appendChild(o);}
+yearSelect.value=String(challengeCurrentYear);
 const challengeBookTarget=document.getElementById('challengeTargetBooks');
 const challengePageTarget=document.getElementById('challengePagesPerBook');
 const challengeSummary=document.getElementById('challengeSummary');
 const challengeBooks=document.getElementById('challengeBooks');
 function getChallengeGoal(year){return challengeGoals[year]||{books:27,pages:400};}
 function showChallengeGoal(){const g=getChallengeGoal(yearSelect.value);challengeBookTarget.value=g.books;challengePageTarget.value=g.pages;renderChallenge();}
-yearSelect.addEventListener('change',showChallengeGoal);
+yearSelect.addEventListener('change',()=>{if(yearSelect.checkValidity()&&yearSelect.value)showChallengeGoal();});
 document.getElementById('saveChallenge').addEventListener('click',()=>{
- if(!challengeBookTarget.reportValidity()||!challengePageTarget.reportValidity())return;
+ if(!yearSelect.reportValidity()||!challengeBookTarget.reportValidity()||!challengePageTarget.reportValidity())return;
  const books=Number(challengeBookTarget.value),pages=Number(challengePageTarget.value);
  if(!Number.isInteger(books)||!Number.isInteger(pages)||books<1||pages<1)return;
  challengeGoals[yearSelect.value]={books,pages};
@@ -716,7 +675,7 @@ async function lookupBookPages(book,author){
 function queuePageLookup(book,author){if(!book.pages){lookupBookPages(book,author);}}
 function renderChallenge(){
  if(!challengeSummary)return;
- const year=Number(yearSelect.value)||challengeCurrentYear,g=getChallengeGoal(year);
+ const year=(yearSelect.validity.valid&&yearSelect.value)?Number(yearSelect.value):challengeCurrentYear,g=getChallengeGoal(year);
  const finished=series.flatMap(group=>group.books.map(book=>({book,author:group.author,series:group.name}))).filter(x=>x.book.read&&x.book.finishedAt&&new Date(x.book.finishedAt).getFullYear()===year);
  const pages=finished.reduce((total,x)=>total+(Number(x.book.pages)||0),0);
  const missing=finished.filter(x=>!(Number(x.book.pages)>0));
