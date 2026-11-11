@@ -853,10 +853,10 @@ showChallengeGoal();
  const stop=document.getElementById('isbnScanStop');
  const panel=document.getElementById('isbnScanner');
  const video=document.getElementById('isbnCameraPreview');
- let stream=null,scanning=false,scanFrame=0,lastScan=0,lookupSerial=0;
+ let stream=null,scanning=false,scanFrame=0,lastScan=0,lookupSerial=0,lastCandidate='',candidateHits=0;
  function cleanISBN(raw){return String(raw||'').replace(/[\s-]/g,'').toUpperCase();}
  function validISBN(isbn){
-  if(/^\d{13}$/.test(isbn))return [...isbn].reduce((sum,ch,i)=>sum+Number(ch)*(i%2?3:1),0)%10===0;
+  if(/^97[89]\d{10}$/.test(isbn))return [...isbn].reduce((sum,ch,i)=>sum+Number(ch)*(i%2?3:1),0)%10===0;
   if(/^\d{9}[\dX]$/.test(isbn))return [...isbn].reduce((sum,ch,i)=>sum+(ch==='X'?10:Number(ch))*(10-i),0)%11===0;
   return false;
  }
@@ -870,7 +870,7 @@ showChallengeGoal();
  async function lookup(raw){
   const isbn=cleanISBN(raw),seq=++lookupSerial;
   field.value=isbn;
-  if(!validISBN(isbn)){status.textContent='Enter a valid ISBN-10 or ISBN-13 (check the digits).';result.innerHTML='';return;}
+  if(!validISBN(isbn)){status.textContent='Enter a valid ISBN-10 or ISBN-13. Book ISBN-13 numbers start with 978 or 979. Check the digits printed above the barcode.';result.innerHTML='';return;}
   stopCamera();
   status.textContent='Looking up ISBN '+isbn+'…';result.innerHTML='';
   try{
@@ -882,7 +882,7 @@ showChallengeGoal();
    if(!book){
     // Fallback to edition details, then resolve author names via author API.
     const edition=await fetch('https://openlibrary.org/isbn/'+encodeURIComponent(isbn)+'.json',{signal:AbortSignal.timeout(12000)});
-    if(!edition.ok)throw new Error(edition.status===404?'No book was found for that ISBN.':'Book lookup unavailable.');
+    if(!edition.ok)throw new Error(edition.status===404?'No book was found for that ISBN. Check the scanned digits against the number printed above the barcode, or search by title.':'Book lookup unavailable.');
     const info=await edition.json();
     let authors=[];
     for(const a of (info.authors||[]).slice(0,3)){
@@ -910,15 +910,24 @@ showChallengeGoal();
   if(!('BarcodeDetector' in window)){status.textContent='Barcode scanning is not supported in this browser. Enter the ISBN manually.';return;}
   stopCamera();
   try{
-   const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+   const detector=new BarcodeDetector({formats:['ean_13']});
    stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
    video.srcObject=stream;panel.hidden=false;scanning=true;
-   await video.play();status.textContent='Point your camera at the ISBN barcode on the book.';
+   await video.play();lastCandidate='';candidateHits=0;status.textContent='Point at the 13-digit ISBN barcode (starts 978 or 979). Hold steady; you will confirm the scanned number before searching.';
    async function scan(now){
     if(!scanning)return;
     if(now-lastScan>=300 && video.readyState>=2){
      lastScan=now;
-     try{const codes=await detector.detect(video);const isbn=codes.map(x=>cleanISBN(x.rawValue)).find(x=>validISBN(x));if(isbn){lookup(isbn);return;}}catch(e){}
+     try{const codes=await detector.detect(video);
+      const isbn=codes.map(x=>cleanISBN(x.rawValue)).find(x=>/^97[89]\d{10}$/.test(x)&&validISBN(x));
+      if(isbn){
+       candidateHits=isbn===lastCandidate?candidateHits+1:1;lastCandidate=isbn;
+       if(candidateHits>=3){
+        stopCamera();field.value=isbn;result.innerHTML='';
+        status.textContent='Scanned ISBN: '+isbn+'. Compare these digits with the ISBN printed above the barcode. Correct the number if needed, then tap Find book.';
+        field.focus();return;
+       }
+      }else{candidateHits=0;lastCandidate='';}}catch(e){}
     }
     if(scanning)scanFrame=requestAnimationFrame(scan);
    }
