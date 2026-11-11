@@ -216,7 +216,12 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
 .series-name.papertrail-series-all-owned .papertrail-series-name-toggle,
 .series-name.papertrail-series-all-read .papertrail-series-name-toggle { display:block; width:100%; box-sizing:border-box; padding:7px 10px; text-align:left; }
 </style>
-</head>
+<style>.papertrail-isbn-lookup{padding:16px;border:1px solid var(--line);border-radius:12px;margin:0 0 20px;background:var(--surface)}.papertrail-isbn-lookup h4{margin:0 0 8px;font-size:17px}.papertrail-isbn-form{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch}.papertrail-isbn-form input{flex:1 1 170px;min-width:0;border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit;background:var(--surface);color:var(--ink)}#isbnScanner{margin:12px 0}#isbnCameraPreview{display:block;width:100%;max-height:270px;object-fit:cover;background:#111;border-radius:10px;margin-bottom:8px}#isbnScanner[hidden]{display:none}@media(max-width:560px){.papertrail-isbn-form .btn{flex:1 1 125px}}</style><style>
+.papertrail-move-select{border:1px solid #b7c8bf;border-radius:8px;background:transparent;color:inherit;min-width:38px;min-height:38px;font-size:18px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.papertrail-move-select.armed,.papertrail-move-selected{background:#d7f2de!important;outline:3px solid #1b8a52!important;outline-offset:1px}
+.papertrail-move-hint{font-size:12px;color:#36574a;margin:4px 0 10px}
+.papertrail-move-target{outline:2px dashed #21844c;outline-offset:2px}
+</style></head>
 <body>
 <div class="app-root" id="appRoot">
   <header class="topbar">
@@ -237,7 +242,7 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
     <section id="searchPage" class="hidden">
       <div class="page-head"><div><div class="eyebrow">Find your next world</div><h2>Add Books</h2><p class="subtitle">Search by book, author, or universe. Add one title, or bring in a whole connected world and choose exactly which books belong on your list.</p></div></div>
       <div class="search-layout">
-        <div class="panel"><h3>Find books & universes</h3><p class="panel-intro">Search millions of real books and authors online using Open Library. Your saved TBR remains available offline.</p><div class="searchbox"><span>⌕</span><input id="catalogSearch" placeholder="Search any book, author, or series" /></div><div class="search-results" id="onlineCatalogResults" aria-live="polite"></div><div class="search-results" id="catalogResults"></div><div class="notice">Tip: choose <b>Add entire universe</b> to review a recommended reading order across connected series—not just a single trilogy. You can untick any books you don't want.</div></div>
+        <div class="panel"><h3>Find books & universes</h3><p class="panel-intro">Search millions of real books and authors online using Open Library. Your saved TBR remains available offline.</p><section class="papertrail-isbn-lookup" aria-labelledby="isbnLookupTitle"><h4 id="isbnLookupTitle">Scan barcode or enter ISBN</h4><p class="panel-intro">Use the ISBN barcode on the back of a book, or enter its 10- or 13-digit ISBN. Internet is required to look up book details.</p><form id="isbnLookupForm" class="papertrail-isbn-form"><input id="isbnLookupInput" type="text" inputmode="numeric" autocomplete="off" placeholder="ISBN-10 or ISBN-13" aria-label="Book ISBN" required><button class="btn primary" type="submit">Find book</button><button class="btn soft" id="isbnScanStart" type="button">📷 Scan barcode</button></form><div id="isbnScanner" hidden><video id="isbnCameraPreview" autoplay muted playsinline aria-label="Camera barcode preview"></video><button class="btn soft" type="button" id="isbnScanStop">Stop camera</button></div><div id="isbnLookupStatus" class="panel-intro" role="status" aria-live="polite"></div><div id="isbnLookupResults"></div></section><div class="searchbox"><span>⌕</span><input id="catalogSearch" placeholder="Search any book, author, or series" /></div><div class="search-results" id="onlineCatalogResults" aria-live="polite"></div><div class="search-results" id="catalogResults"></div><div class="notice">Tip: choose <b>Add entire universe</b> to review a recommended reading order across connected series—not just a single trilogy. You can untick any books you don't want.</div></div>
         <div class="panel" id="recommendedOrderPanel"><h3>Recommended reading order</h3><p class="panel-intro">Look up reading-order guides for a book universe, including connected series. Guides may recommend publication order or a different reading path, so compare sources before choosing.</p><form id="readingOrderForm"><div class="field"><label for="readingOrderUniverse">Universe or series name</label><input id="readingOrderUniverse" placeholder="e.g. Cosmere, Discworld, Realm of the Elderlings" required autocomplete="off"></div><button type="submit" class="btn primary">Look up reading order</button></form><div id="readingOrderResults" class="search-results" aria-live="polite"></div></div>
         <div class="panel"><h3>Add manually</h3><p class="panel-intro">Know exactly what you want to track? Add a single book or start a series of your own.</p><form id="manualForm"><div class="field"><label for="manualTitle">Book title *</label><input id="manualTitle" required placeholder="e.g. The Colour of Magic" /></div><div class="field-row"><div class="field"><label for="manualAuthor">Author *</label><input id="manualAuthor" required placeholder="Author name" /></div><div class="field"><label for="manualGenre">Main genre *</label><input id="manualGenre" list="genreSuggestions" required placeholder="Select or type a genre" /><datalist id="genreSuggestions"></datalist></div></div><div class="field"><label for="manualSeries">Series / universe name</label><input id="manualSeries" placeholder="e.g. Discworld (leave blank for standalone)" /></div><div class="field-row"><div class="field"><label for="manualOrder">Position in series</label><input id="manualOrder" type="number" min="1" placeholder="e.g. 1" /></div><div class="field"><label for="manualOwned">Do you own it?</label><select id="manualOwned"><option value="no">Not yet</option><option value="yes">Yes, I own it</option></select></div></div><button class="btn primary" type="submit" style="width:100%">＋ Add book to TBR</button></form></div>
       </div>
@@ -291,11 +296,18 @@ function papertrailAddAuthor(group,author){
  for(const name of papertrailAuthorNames(author))if(!names.some(x=>x.toLocaleLowerCase()===name.toLocaleLowerCase()))names.push(name);
  group.author=names.join(' & ');
 }
-function papertrailFindSeries(name){return series.find(x=>x.name.trim().toLocaleLowerCase()===String(name).trim().toLocaleLowerCase());}
+function papertrailFindSeries(name,author){
+ const normalized=String(name||'').trim().toLocaleLowerCase();
+ const writer=String(author||'').trim().toLocaleLowerCase();
+ return series.find(x=>x.name.trim().toLocaleLowerCase()===normalized &&
+   (normalized!=='standalone' || (writer && papertrailAuthorNames(x.author).some(a=>a.trim().toLocaleLowerCase()===writer))));
+}
 function papertrailMergeSameNameSeries(){
  const seen=new Map();
  for(const group of [...series]){
-  const key=String(group.name||'').trim().toLocaleLowerCase();if(!key)continue;
+  const base=String(group.name||'').trim().toLocaleLowerCase();if(!base)continue;
+  // Standalone is an author-specific shelf, not a shared universe.
+  const key=base==='standalone'?base+'::'+String(group.author||'').trim().toLocaleLowerCase():base;
   const existing=seen.get(key);
   if(!existing){seen.set(key,group);continue;}
   papertrailAddAuthor(existing,group.author);
@@ -328,7 +340,7 @@ function movePapertrailGenre(name,step){
  render();
 }
 
-function render(){refreshGenreControls();updateStats(); const q=$('tbrSearch').value.toLowerCase(); const genre=$('genreFilter').value,author=$('authorFilter').value,seriesName=$('seriesFilter').value;const progressFilter=$('readingProgressFilter').value; let list=series.filter(s=>(genre==='all'||s.genre===genre)&&(author==='all'||papertrailAuthorNames(s.author).includes(author))&&(seriesName==='all'||s.name===seriesName)&&(progressFilter==='all'||(progressFilter==='in-progress'&&s.books.some(b=>b.read)&&s.books.some(b=>!b.read))||(progressFilter==='completed'&&s.books.length>0&&s.books.every(b=>b.read))||(progressFilter==='not-started'&&s.books.length>0&&s.books.every(b=>!b.read)))&&[s.name,s.author,s.genre,...s.books.map(b=>b.title)].join(' ').toLowerCase().includes(q));const sort=$('sortMode').value;if(sort==='name')list.sort((a,b)=>a.name.localeCompare(b.name));if(sort==='rating')list.sort((a,b)=>(parseFloat(avg(b))||0)-(parseFloat(avg(a))||0));if(sort==='progress')list.sort((a,b)=>readCount(b)/b.books.length-readCount(a)/a.books.length);const groups={};list.forEach(s=>(groups[s.genre]??=[]).push(s));let html='';orderedPapertrailGenres(Object.keys(groups)).forEach(g=>{html+=`<div class="section-title papertrail-genre-heading"><button type="button" class="papertrail-genre-toggle" data-collapse-genre="${escapeHtml(g)}" aria-expanded="${!!expandedPapertrailGenres.has(g)}" aria-label="${!expandedPapertrailGenres.has(g)?'Expand':'Collapse'} ${escapeHtml(g)}"><span class="papertrail-genre-chevron">${!expandedPapertrailGenres.has(g)?'▸':'▾'}</span><strong>${escapeHtml(g)}</strong><span class="papertrail-genre-count">${groups[g].length} ${groups[g].length===1?'series':'series & worlds'}</span></button><span class="papertrail-genre-drag" data-drag-genre="${escapeHtml(g)}" role="img" aria-label="Drag to reorder ${escapeHtml(g)}" title="Hold and drag to move genre">⠿</span></div><div class="series-list ${!expandedPapertrailGenres.has(g)?'hidden':''}">`;groups[g].forEach(s=>{const read=readCount(s),rating=avg(s);html+=`<article class="series-card" draggable="true" data-series="${s.id}"><div class="drag" title="Drag to reorder">⠿</div><div class="series-info"><h4 class="series-name ${s.books.length>0&&s.books.every(b=>b.owned)?'papertrail-series-all-owned':''} ${s.books.length>0&&s.books.every(b=>b.read)?'papertrail-series-all-read':''}"><button type="button" class="papertrail-series-name-toggle" data-action="toggle" data-id="${s.id}" aria-expanded="${!!s.expanded}" title="${s.expanded?'Collapse':'Expand'} books in this series">${escapeHtml(s.name)} <span aria-hidden="true">${s.expanded?'▾':'▸'}</span></button></h4><div class="series-meta"><span>${escapeHtml(s.author)}</span><span class="genre-tag">${escapeHtml(s.genre)}</span><span>${s.books.length} books</span><span>${read}/${s.books.length} read</span></div></div><div class="series-rating"><div class="rating-num">${rating}<em> / 10</em></div><div class="rating-caption">${read?`${read} rated/read`:'No ratings yet'}</div><div class="progress"><span style="width:${read/s.books.length*100}%"></span></div></div><div class="card-actions"><button class="icon-btn" title="Move up" data-action="up" data-id="${s.id}">↑</button><button class="icon-btn" title="Move down" data-action="down" data-id="${s.id}">↓</button><button class="icon-btn" title="Edit series" data-action="edit" data-id="${s.id}">✎</button><button class="icon-btn" title="${s.expanded?'Collapse':'Expand'} books" aria-label="${s.expanded?'Collapse':'Expand'} books in ${escapeHtml(s.name)}" aria-expanded="${!!s.expanded}" data-action="toggle" data-id="${s.id}">${s.expanded?'−':'＋'}</button></div>`;if(s.expanded){html+=`<div class="book-list">`;s.books.sort((a,b)=>a.order-b.order).forEach((b,i)=>{html+=`<div class="book-row ${b.owned?'papertrail-owned-book':''} ${b.read?'papertrail-read-book':''}" data-book-id="${b.id}"><span class="book-num">${i+1}</span><span><span class="book-title">${escapeHtml(b.title)}</span><span class="book-sub">${escapeHtml(b.arc||s.name)}</span>${b.rating!=null?`<span class="papertrail-book-rating">★ ${Number(b.rating).toFixed(1)} / 10</span>`:''}</span><span class="papertrail-book-status"><span class="status ${b.read?'read':''}">${b.read?'✓ Read':'To read'}</span>${b.owned?'<span class="papertrail-owned-label">Owned</span>':''}</span><button class="icon-btn" title="Edit book" data-action="book" data-id="${s.id}" data-book="${b.id}">✎</button></div>`;});html+='</div>';}html+='</article>';});html+='</div>';});$('seriesSections').innerHTML=html||'<div class="empty"><strong>No books found just yet</strong>Try another search or add your next universe.</div>';attachDrag();}
+function render(){series.forEach(item=>{if(!expandedPapertrailGenres.has(item.genre))item.expanded=false;});refreshGenreControls();updateStats(); const q=$('tbrSearch').value.toLowerCase(); const genre=$('genreFilter').value,author=$('authorFilter').value,seriesName=$('seriesFilter').value;const progressFilter=$('readingProgressFilter').value; let list=series.filter(s=>(genre==='all'||s.genre===genre)&&(author==='all'||papertrailAuthorNames(s.author).includes(author))&&(seriesName==='all'||s.name===seriesName)&&(progressFilter==='all'||(progressFilter==='in-progress'&&s.books.some(b=>b.read)&&s.books.some(b=>!b.read))||(progressFilter==='completed'&&s.books.length>0&&s.books.every(b=>b.read))||(progressFilter==='not-started'&&s.books.length>0&&s.books.every(b=>!b.read)))&&[s.name,s.author,s.genre,...s.books.map(b=>b.title)].join(' ').toLowerCase().includes(q));const sort=$('sortMode').value;if(sort==='name')list.sort((a,b)=>a.name.localeCompare(b.name));if(sort==='rating')list.sort((a,b)=>(parseFloat(avg(b))||0)-(parseFloat(avg(a))||0));if(sort==='progress')list.sort((a,b)=>readCount(b)/b.books.length-readCount(a)/a.books.length);const groups={};list.forEach(s=>(groups[s.genre]??=[]).push(s));let html='';orderedPapertrailGenres(Object.keys(groups)).forEach(g=>{html+=`<div class="section-title papertrail-genre-heading"><button type="button" class="papertrail-genre-toggle" data-collapse-genre="${escapeHtml(g)}" aria-expanded="${!!expandedPapertrailGenres.has(g)}" aria-label="${!expandedPapertrailGenres.has(g)?'Expand':'Collapse'} ${escapeHtml(g)}"><span class="papertrail-genre-chevron">${!expandedPapertrailGenres.has(g)?'▸':'▾'}</span><strong>${escapeHtml(g)}</strong><span class="papertrail-genre-count">${groups[g].length} ${groups[g].length===1?'series':'series & worlds'}</span></button><button type="button" class="papertrail-move-select" data-select-genre="${escapeHtml(g)}" aria-label="Hold 2 seconds to select genre ${escapeHtml(g)}" title="Hold 2 seconds, then tap a destination genre">◎</button><span class="papertrail-genre-drag" data-drag-genre="${escapeHtml(g)}" role="img" aria-label="Drag to reorder ${escapeHtml(g)}" title="Hold and drag to move genre">⠿</span></div><div class="series-list ${!expandedPapertrailGenres.has(g)?'hidden':''}">`;groups[g].forEach(s=>{const read=readCount(s),rating=avg(s);html+=`<article class="series-card" draggable="true" data-series="${s.id}"><div class="drag" title="Drag to reorder">⠿</div><div class="series-info"><h4 class="series-name ${s.books.length>0&&s.books.every(b=>b.owned)?'papertrail-series-all-owned':''} ${s.books.length>0&&s.books.every(b=>b.read)?'papertrail-series-all-read':''}"><button type="button" class="papertrail-series-name-toggle" data-action="toggle" data-id="${s.id}" aria-expanded="${!!s.expanded}" title="${s.expanded?'Collapse':'Expand'} books in this series">${escapeHtml(s.name)} <span aria-hidden="true">${s.expanded?'▾':'▸'}</span></button></h4><div class="series-meta"><span>${escapeHtml(s.author)}</span><span class="genre-tag">${escapeHtml(s.genre)}</span><span>${s.books.length} books</span><span>${read}/${s.books.length} read</span></div></div><div class="series-rating"><div class="rating-num">${rating}<em> / 10</em></div><div class="rating-caption">${read?`${read} rated/read`:'No ratings yet'}</div><div class="progress"><span style="width:${read/s.books.length*100}%"></span></div></div><div class="card-actions"><button class="icon-btn" title="Move up" data-action="up" data-id="${s.id}">↑</button><button class="icon-btn" title="Move down" data-action="down" data-id="${s.id}">↓</button><button class="icon-btn" title="Edit series" data-action="edit" data-id="${s.id}">✎</button><button class="icon-btn" title="${s.expanded?'Collapse':'Expand'} books" aria-label="${s.expanded?'Collapse':'Expand'} books in ${escapeHtml(s.name)}" aria-expanded="${!!s.expanded}" data-action="toggle" data-id="${s.id}">${s.expanded?'−':'＋'}</button></div>`;if(s.expanded){html+=`<div class="book-list">`;s.books.sort((a,b)=>a.order-b.order).forEach((b,i)=>{html+=`<div class="book-row ${b.owned?'papertrail-owned-book':''} ${b.read?'papertrail-read-book':''}" data-book-id="${b.id}"><button type="button" class="papertrail-move-select" data-select-book="${b.id}" aria-label="Hold 2 seconds to select ${escapeHtml(b.title)}" title="Hold 2 seconds to move to another genre">◎</button><span class="book-num">${i+1}</span><span><span class="book-title">${escapeHtml(b.title)}</span><span class="book-sub">${escapeHtml(b.arc||s.name)}</span>${b.rating!=null?`<span class="papertrail-book-rating">★ ${Number(b.rating).toFixed(1)} / 10</span>`:''}</span><span class="papertrail-book-status"><span class="status ${b.read?'read':''}">${b.read?'✓ Read':'To read'}</span>${b.owned?'<span class="papertrail-owned-label">Owned</span>':''}</span><button class="icon-btn" title="Edit book" data-action="book" data-id="${s.id}" data-book="${b.id}">✎</button></div>`;});html+='</div>';}html+='</article>';});html+='</div>';});$('seriesSections').innerHTML=html||'<div class="empty"><strong>No books found just yet</strong>Try another search or add your next universe.</div>';attachDrag();}
 function attachDrag(){document.querySelectorAll('[data-series]').forEach(el=>{el.addEventListener('dragstart',e=>{e.dataTransfer.setData('text/plain',el.dataset.series);el.style.opacity='.5'});el.addEventListener('dragend',()=>el.style.opacity='1');el.addEventListener('dragover',e=>e.preventDefault());el.addEventListener('drop',e=>{e.preventDefault();const from=Number(e.dataTransfer.getData('text/plain')),to=Number(el.dataset.series);if(from===to)return;const a=series.findIndex(s=>s.id===from),b=series.findIndex(s=>s.id===to);const moved=series.splice(a,1)[0];series.splice(b,0,moved);render();});});}
 function switchTab(tab){$('tbrPage').classList.toggle('hidden',tab!=='tbr');$('searchPage').classList.toggle('hidden',tab!=='search');$('challengePage').classList.toggle('hidden',tab!=='challenge');if(tab==='challenge')renderChallenge();document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));if(tab==='search')renderCatalog();}
 document.querySelectorAll('.nav-btn').forEach(b=>b.addEventListener('click',()=>switchTab(b.dataset.tab)));
@@ -372,7 +384,7 @@ function finishPapertrailGenreDrag(e,cancel){
 }
 papertrailGenreContainer.addEventListener('pointerup',e=>finishPapertrailGenreDrag(e,false));
 papertrailGenreContainer.addEventListener('pointercancel',e=>finishPapertrailGenreDrag(e,true));
-$('seriesSections').addEventListener('click',e=>{const toggle=e.target.closest('[data-collapse-genre]');if(toggle){const genre=toggle.dataset.collapseGenre;if(expandedPapertrailGenres.has(genre)){expandedPapertrailGenres.delete(genre);series.forEach(item=>{if(item.genre===genre)item.expanded=false;});}else expandedPapertrailGenres.add(genre);render();return;}});
+$('seriesSections').addEventListener('click',e=>{const toggle=e.target.closest('[data-collapse-genre]');if(toggle){const genre=toggle.dataset.collapseGenre;if(expandedPapertrailGenres.has(genre)){expandedPapertrailGenres.delete(genre);series.forEach(item=>{if(String(item.genre||'').trim().toLowerCase()===String(genre).trim().toLowerCase())item.expanded=false;});}else expandedPapertrailGenres.add(genre);render();return;}});
 $('seriesSections').addEventListener('click',e=>{const b=e.target.closest('[data-action]');if(!b)return;const s=series.find(x=>x.id===Number(b.dataset.id));if(!s)return;if(b.dataset.action==='toggle'){s.expanded=!s.expanded;render();}if(b.dataset.action==='edit')openEditSeries(s);if(b.dataset.action==='book'){const book=s.books.find(x=>x.id===Number(b.dataset.book));openEditBook(s,book);}if(b.dataset.action==='up'||b.dataset.action==='down'){const i=series.indexOf(s),j=i+(b.dataset.action==='up'?-1:1);if(j>=0&&j<series.length){series.splice(i,1);series.splice(j,0,s);render();}}});
 function openModal(title,body,foot=''){ $('modalContent').innerHTML=`<div class="modal-head"><h3>${title}</h3><button class="modal-close" id="closeModal">×</button></div>${body}${foot}`;$('modalBackdrop').classList.add('open');$('closeModal').onclick=closeModal;}
 function closeModal(){$('modalBackdrop').classList.remove('open');}
@@ -381,7 +393,7 @@ function openEditSeries(s){openModal('Edit series / universe',`<form id="editSer
 function openEditBook(s,b){openModal('Update book',`<form id="editBookForm"><div class="field"><label>Book title</label><input id="editBookTitle" required value="${escapeHtml(b.title)}"></div><div class="field"><label>Series / universe (move book)</label><input id="editBookSeries" list="bookSeriesSuggestions" required value="${escapeHtml(s.name)}"><datalist id="bookSeriesSuggestions">${series.map(group=>`<option value="${escapeHtml(group.name)}"></option>`).join('')}</datalist></div><div class="field"><label>Series arc / sub-series</label><input id="editBookArc" value="${escapeHtml(b.arc||'')}"></div><div class="field-row"><div class="field"><label>Reading order</label><input id="editBookOrder" type="number" min="1" value="${b.order}"></div><div class="field"><label>Rating out of 10</label><input id="editBookRating" type="number" inputmode="decimal" min="0" max="10" step="0.1" placeholder="e.g. 8.7" value="${b.rating == null ? '' : Number(b.rating).toFixed(1)}"></div></div><div class="field-row"><div class="field"><label>Reading status</label><select id="editBookRead"><option value="no" ${!b.read?'selected':''}>To read</option><option value="yes" ${b.read?'selected':''}>Read</option></select></div><div class="field"><label>Ownership</label><select id="editBookOwned"><option value="no" ${!b.owned?'selected':''}>Don't own</option><option value="yes" ${b.owned?'selected':''}>I own it</option></select></div></div><button class="btn primary" type="submit" style="width:100%">Save book</button></form><button class="btn ghost" id="removeBook" style="width:100%;margin-top:8px;color:#A64D3A">Remove from my TBR</button>`);$('editBookForm').onsubmit=e=>{e.preventDefault();const ratingInput=$('editBookRating');if(ratingInput.value.trim()!=='' && (!ratingInput.checkValidity() || !Number.isFinite(Number(ratingInput.value)))){ratingInput.reportValidity();return;}b.title=$('editBookTitle').value.trim();b.arc=$('editBookArc').value.trim();b.order=Math.max(1,Number($('editBookOrder').value)||1);b.read=$('editBookRead').value==='yes';b.owned=$('editBookOwned').value==='yes';b.rating=$('editBookRating').value.trim()!==''?Math.round(Number($('editBookRating').value)*10)/10:null;const destinationName=$('editBookSeries').value.trim();
 if(!destinationName){alert('Enter a series or universe name');return;}
 if(destinationName.toLowerCase()!==s.name.toLowerCase()){
- let destination=series.find(group=>group.name.toLowerCase()===destinationName.toLowerCase()&&group.id!==s.id);
+ let destination=series.find(group=>group.id!==s.id&&group.name.toLowerCase()===destinationName.toLowerCase()&&(destinationName.trim().toLowerCase()!=='standalone'||papertrailAuthorNames(group.author).some(a=>a.toLowerCase()===(b.author||s.author).toLowerCase())));
  if(!destination){
    destination={id:nextId++,name:destinationName,author:s.author,genre:s.genre,kind:s.kind||'Series',expanded:true,books:[]};
    series.push(destination);
@@ -434,7 +446,7 @@ async function addOpenLibrarySeries(book) {
  openModal('Add series / universe',`<p class="panel-intro">Search the author's books and select the titles in your series. Open Library does not reliably index series names, so a correct name should never block adding a universe.</p>
  <div class="field"><label>Series / universe name</label><input id="olSeriesName" value="${onlineEscape(proposed)}" placeholder="e.g. Realm of the Elderlings" required></div>
  <div class="field"><label>Author</label><input id="olSeriesAuthor" value="${onlineEscape(author)}" required></div>
- <div class="field"><label>Genre</label><input id="olSeriesGenre" list="olSeriesGenreChoices" value="${onlineEscape(series.find(x=>x.name.toLowerCase()===name.toLowerCase())?.genre||'Fantasy')}" required placeholder="Select or type a genre"><datalist id="olSeriesGenreChoices">${genres.map(g=>`<option value="${onlineEscape(g)}"></option>`).join('')}</datalist></div>
+ <div class="field"><label>Genre</label><input id="olSeriesGenre" list="olSeriesGenreChoices" value="${onlineEscape(papertrailFindSeries(proposed,author)?.genre||'Fantasy')}" required placeholder="Select or type a genre"><datalist id="olSeriesGenreChoices">${genres.map(g=>`<option value="${onlineEscape(g)}"></option>`).join('')}</datalist></div>
  <button class="btn primary" type="button" id="olFindSeries" style="width:100%">Find author's books</button>
  <div id="olSeriesResults" aria-live="polite"></div>`);
  $('olFindSeries').onclick=async()=>{
@@ -486,7 +498,7 @@ async function addOpenLibrarySeries(book) {
    }
    function finishSeries(chosen){
      const genre=$('olSeriesGenre').value.trim()||'Fiction';      if(!genres.some(x=>x.toLowerCase()===genre.toLowerCase()))genres.push(genre);
-     let group=series.find(x=>x.name.toLowerCase()===name.toLowerCase());
+     let group=papertrailFindSeries(name,writer);
      if(!group){group={id:nextId++,name,author:writer,genre,kind:'Series',expanded:true,books:[]};series.push(group);}else papertrailAddAuthor(group,writer);
      if(!genres.includes(genre))genres.push(genre);
      let count=0;
@@ -518,11 +530,11 @@ $('onlineCatalogResults').addEventListener('click',e=>{
  const btn=e.target.closest('[data-online-book]');if(!btn)return;
  const b=onlineResults[Number(btn.dataset.onlineBook)];if(!b)return;
  const title=b.title,author=(b.author_name||[])[0]||'Unknown author',name=(b.series||[])[0]||title;
- openModal('Add book from Open Library',`<form id="onlineAddForm"><div class="field"><label>Title</label><input id="onlineTitle" required value="${onlineEscape(title)}"></div><div class="field"><label>Author</label><input id="onlineAuthor" required value="${onlineEscape(author)}"></div><div class="field"><label>Series / universe (optional)</label><input id="onlineSeries" value="${onlineEscape((b.series||[])[0]||'')}"></div><div class="field"><label>Genre</label><input id="onlineGenre" list="onlineGenreChoices" required placeholder="Select or type a genre" value="${onlineEscape(series.find(x=>x.name.toLowerCase()===String((b.series||[])[0]||b.title).toLowerCase())?.genre||'Fiction')}"><datalist id="onlineGenreChoices">${genres.map(g=>`<option value="${onlineEscape(g)}"></option>`).join('')}</datalist></div><button class="btn primary" type="submit">Add to my TBR</button></form>`);
+ openModal('Add book from Open Library',`<form id="onlineAddForm"><div class="field"><label>Title</label><input id="onlineTitle" required value="${onlineEscape(title)}"></div><div class="field"><label>Author</label><input id="onlineAuthor" required value="${onlineEscape(author)}"></div><div class="field"><label>Series / universe (optional)</label><input id="onlineSeries" value="${onlineEscape((b.series||[])[0]||'')}"></div><div class="field"><label>Genre</label><input id="onlineGenre" list="onlineGenreChoices" required placeholder="Select or type a genre" value="${onlineEscape(papertrailFindSeries(String((b.series||[])[0]||b.title),b.author_name?.[0]||'')?.genre||'Fiction')}"><datalist id="onlineGenreChoices">${genres.map(g=>`<option value="${onlineEscape(g)}"></option>`).join('')}</datalist></div><button class="btn primary" type="submit">Add to my TBR</button></form>`);
  $('onlineAddForm').onsubmit=ev=>{
  ev.preventDefault();
  const t=$('onlineTitle').value.trim(),a=$('onlineAuthor').value.trim(),g=$('onlineGenre').value.trim(),sn=$('onlineSeries').value.trim(),group=sn||t;
- if(!t||!a||!g)return;  if(!genres.some(x=>x.toLowerCase()===g.toLowerCase()))genres.push(g);  let item=series.find(x=>x.name.toLowerCase()===group.toLowerCase());
+ if(!t||!a||!g)return;  if(!genres.some(x=>x.toLowerCase()===g.toLowerCase()))genres.push(g);  let item=papertrailFindSeries(group,a);
  if(!item){item={id:nextId++,name:group,author:a,genre:g,kind:sn?'Series':'Standalone',expanded:true,books:[]};series.push(item);}else papertrailAddAuthor(item,a);
  if(item.books.some(x=>x.title.toLowerCase()===t.toLowerCase())){toast('Already in your TBR');return;}
  if(!genres.includes(g))genres.push(g);
@@ -532,8 +544,8 @@ $('onlineCatalogResults').addEventListener('click',e=>{
 });
 
 $('catalogResults').addEventListener('click',e=>{const b=e.target.closest('[data-catalog]');if(!b)return;const c=catalogue[Number(b.dataset.catalog)];openCatalogueAdd(c);});
-function openCatalogueAdd(c){const existing=series.some(s=>s.name.toLowerCase()===c.name.toLowerCase());const booksHtml=c.books.map((b,i)=>`<label class="book-select"><input type="checkbox" value="${i}" checked><span><b>${i+1}. ${escapeHtml(b[0])}</b><small>${escapeHtml(b[1])}</small></span></label>`).join('');openModal('Add '+escapeHtml(c.name),`<p class="panel-intro">${escapeHtml(c.author)} · ${c.books.length} books · ${escapeHtml(c.genre)}</p>${existing?'<div class="notice">This universe is already on your TBR. You can add any missing titles without duplicating books.</div>':''}<div class="field"><label>Main genre for this series / universe</label><input id="catalogGenre" list="catalogGenreSuggestions" value="${escapeHtml(c.genre)}" required><datalist id="catalogGenreSuggestions">${genres.map(g=>`<option value="${escapeHtml(g)}"></option>`).join('')}</datalist></div><div class="field"><label>Choose books to add (untick any to exclude)</label><div class="book-select-list">${booksHtml}</div></div><div style="display:flex;gap:8px;margin:12px 0"><button class="btn" id="selectAll" type="button">Select all</button><button class="btn" id="selectNone" type="button">Select none</button></div><button class="btn primary" id="confirmCatalogue" style="width:100%">Add selected books to TBR</button>`);$('selectAll').onclick=()=>document.querySelectorAll('.book-select input').forEach(x=>x.checked=true);$('selectNone').onclick=()=>document.querySelectorAll('.book-select input').forEach(x=>x.checked=false);$('confirmCatalogue').onclick=()=>{const selected=[...document.querySelectorAll('.book-select input:checked')].map(x=>Number(x.value));if(!selected.length){toast('Choose at least one book');return;}const genre=$('catalogGenre').value.trim();if(!genre){toast('Enter a genre');return;}if(!genres.includes(genre))genres.push(genre);let s=series.find(x=>x.name.toLowerCase()===c.name.toLowerCase());if(!s){s={id:nextId++,name:c.name,author:c.author,genre,kind:c.kind,expanded:true,books:[]};series.push(s);}else{s.genre=genre;s.expanded=true;papertrailAddAuthor(s,c.author);}let added=0;selected.forEach(i=>{const [title,arc]=c.books[i];if(!s.books.some(b=>b.title.toLowerCase()===title.toLowerCase())){s.books.push({id:nextId++,title,arc,author:c.author,owned:false,read:false,rating:null,order:s.books.length+1});added++;}});s.books.sort((a,b)=>a.order-b.order);closeModal();switchTab('tbr');render();toast(`${added} book${added===1?'':'s'} added to ${s.name}`);};}
- $('manualForm').onsubmit=e=>{e.preventDefault();const title=$('manualTitle').value.trim(),author=$('manualAuthor').value.trim(),genre=$('manualGenre').value.trim(),name=$('manualSeries').value.trim()||title;if(!genre){toast('Enter a genre');return;}if(!genres.includes(genre))genres.push(genre);let s=series.find(x=>x.name.toLowerCase()===name.toLowerCase());if(!s){s={id:nextId++,name,author,genre,kind:$('manualSeries').value.trim()?'Series':'Standalone',expanded:true,books:[]};series.push(s);}else{s.genre=genre;papertrailAddAuthor(s,author);}const duplicate=s.books.some(b=>b.title.toLowerCase()===title.toLowerCase());if(duplicate){toast('That book is already in this series');return;}s.books.push({id:nextId++,title,author,arc:name===title?'Standalone':name,owned:$('manualOwned').value==='yes',read:false,rating:null,order:Number($('manualOrder').value)||s.books.length+1});s.books.sort((a,b)=>a.order-b.order);s.expanded=true;$('manualForm').reset();switchTab('tbr');render();toast('Book added to your TBR');};
+function openCatalogueAdd(c){const existing=series.some(s=>s.name.toLowerCase()===c.name.toLowerCase());const booksHtml=c.books.map((b,i)=>`<label class="book-select"><input type="checkbox" value="${i}" checked><span><b>${i+1}. ${escapeHtml(b[0])}</b><small>${escapeHtml(b[1])}</small></span></label>`).join('');openModal('Add '+escapeHtml(c.name),`<p class="panel-intro">${escapeHtml(c.author)} · ${c.books.length} books · ${escapeHtml(c.genre)}</p>${existing?'<div class="notice">This universe is already on your TBR. You can add any missing titles without duplicating books.</div>':''}<div class="field"><label>Main genre for this series / universe</label><input id="catalogGenre" list="catalogGenreSuggestions" value="${escapeHtml(c.genre)}" required><datalist id="catalogGenreSuggestions">${genres.map(g=>`<option value="${escapeHtml(g)}"></option>`).join('')}</datalist></div><div class="field"><label>Choose books to add (untick any to exclude)</label><div class="book-select-list">${booksHtml}</div></div><div style="display:flex;gap:8px;margin:12px 0"><button class="btn" id="selectAll" type="button">Select all</button><button class="btn" id="selectNone" type="button">Select none</button></div><button class="btn primary" id="confirmCatalogue" style="width:100%">Add selected books to TBR</button>`);$('selectAll').onclick=()=>document.querySelectorAll('.book-select input').forEach(x=>x.checked=true);$('selectNone').onclick=()=>document.querySelectorAll('.book-select input').forEach(x=>x.checked=false);$('confirmCatalogue').onclick=()=>{const selected=[...document.querySelectorAll('.book-select input:checked')].map(x=>Number(x.value));if(!selected.length){toast('Choose at least one book');return;}const genre=$('catalogGenre').value.trim();if(!genre){toast('Enter a genre');return;}if(!genres.includes(genre))genres.push(genre);let s=papertrailFindSeries(c.name,c.author);if(!s){s={id:nextId++,name:c.name,author:c.author,genre,kind:c.kind,expanded:true,books:[]};series.push(s);}else{s.genre=genre;s.expanded=true;papertrailAddAuthor(s,c.author);}let added=0;selected.forEach(i=>{const [title,arc]=c.books[i];if(!s.books.some(b=>b.title.toLowerCase()===title.toLowerCase())){s.books.push({id:nextId++,title,arc,author:c.author,owned:false,read:false,rating:null,order:s.books.length+1});added++;}});s.books.sort((a,b)=>a.order-b.order);closeModal();switchTab('tbr');render();toast(`${added} book${added===1?'':'s'} added to ${s.name}`);};}
+ $('manualForm').onsubmit=e=>{e.preventDefault();const title=$('manualTitle').value.trim(),author=$('manualAuthor').value.trim(),genre=$('manualGenre').value.trim(),name=$('manualSeries').value.trim()||title;if(!genre){toast('Enter a genre');return;}if(!genres.includes(genre))genres.push(genre);let s=papertrailFindSeries(name,author);if(!s){s={id:nextId++,name,author,genre,kind:$('manualSeries').value.trim()?'Series':'Standalone',expanded:true,books:[]};series.push(s);}else{s.genre=genre;papertrailAddAuthor(s,author);}const duplicate=s.books.some(b=>b.title.toLowerCase()===title.toLowerCase());if(duplicate){toast('That book is already in this series');return;}s.books.push({id:nextId++,title,author,arc:name===title?'Standalone':name,owned:$('manualOwned').value==='yes',read:false,rating:null,order:Number($('manualOrder').value)||s.books.length+1});s.books.sort((a,b)=>a.order-b.order);s.expanded=true;$('manualForm').reset();switchTab('tbr');render();toast('Book added to your TBR');};
 /* Enhanced universe tools: custom books, status/format tracking, reading paths, and backup. */
 const originalRender = render;
 render = function(){ originalRender(); document.querySelectorAll('.series-card[data-series]').forEach(card=>{const id=Number(card.dataset.series);if(card.querySelector('[data-action="add-universe-book"]'))return;const actions=card.querySelector('.card-actions');if(actions){const add=document.createElement('button');add.className='icon-btn';add.title='Add a book, novella, or short story to this universe';add.textContent='＋';add.dataset.action='add-universe-book';add.dataset.id=String(id);actions.insertBefore(add,actions.firstChild);}}); };
@@ -543,7 +555,7 @@ openEditBook = function(s,b){
   $('editBookForm').onsubmit=e=>{e.preventDefault();const ratingInput=$('editBookRating');if(ratingInput.value.trim()!=='' && (!ratingInput.checkValidity() || !Number.isFinite(Number(ratingInput.value)))){ratingInput.reportValidity();return;}b.title=$('editBookTitle').value.trim();b.author=$('editBookAuthor').value.trim();papertrailAddAuthor(s,b.author);b.arc=$('editBookArc').value.trim();b.order=Math.max(1,Number($('editBookOrder').value)||1);const status=$('editBookRead').value;const wasRead=!!b.read;b.read=status==='yes';if(b.read&&!wasRead){b.finishedAt=new Date().toISOString();queuePageLookup(b,s.author);}else if(!b.read&&wasRead){b.finishedAt=null;}b.currentlyReading=status==='current';b.onHold=status==='hold';b.dnf=status==='dnf';b.owned=$('editBookOwned').value==='yes';b.notes=$('editBookNotes').value.trim();b.rating=$('editBookRating').value.trim()!==''?Math.round(Number($('editBookRating').value)*10)/10:null;const destinationName=$('editBookSeries').value.trim();
 if(!destinationName){alert('Enter a series or universe name');return;}
 if(destinationName.toLowerCase()!==s.name.toLowerCase()){
- let destination=series.find(group=>group.name.toLowerCase()===destinationName.toLowerCase()&&group.id!==s.id);
+ let destination=series.find(group=>group.id!==s.id&&group.name.toLowerCase()===destinationName.toLowerCase()&&(destinationName.trim().toLowerCase()!=='standalone'||papertrailAuthorNames(group.author).some(a=>a.toLowerCase()===(b.author||s.author).toLowerCase())));
  if(!destination){
    destination={id:nextId++,name:destinationName,author:s.author,genre:s.genre,kind:s.kind||'Series',expanded:true,books:[]};
    series.push(destination);
@@ -736,7 +748,7 @@ csvInput.onchange=async()=>{
   if(!confirm('Import '+additions.length+' CSV book rows? Existing books will be kept; matching titles in the same series will be skipped. Export a backup first.'))return;
   let count=0;
   additions.forEach(x=>{
-   let group=papertrailFindSeries(x.name);
+   let group=papertrailFindSeries(x.name,x.author);
    if(!group){group={id:nextId++,name:x.name,author:x.author,genre:x.genre,kind:x.kind,expanded:true,books:[]};series.push(group);}else papertrailAddAuthor(group,x.author);
    if(!genres.includes(x.genre))genres.push(x.genre);
    if(group.books.some(b=>b.title.toLowerCase()===x.title.toLowerCase()))return;
@@ -807,7 +819,7 @@ function renderChallenge(){
  challengeSummary.innerHTML='<div class="challenge-stats"><div><strong>'+pages.toLocaleString()+'</strong><span>pages counted</span></div><div><strong>'+finished.length.toLocaleString()+'</strong><span>actual books read</span></div><div><strong>'+equiv.toFixed(2)+'</strong><span>equivalent books</span></div><div><strong>'+total.toLocaleString()+'</strong><span>target pages</span></div><div><strong>'+pct.toFixed(1)+'%</strong><span>complete</span></div></div><p class="panel-intro">'+finished.length+' finished book(s) in '+year+(missing.length?' · '+missing.length+' missing page counts (not counted yet)':'')+'</p>';
  document.getElementById('challengeProgressFill').style.width=pct+'%';
  document.getElementById('challengeRange').textContent='1 January '+year+' – 31 December '+year+' · '+g.books+' books × '+g.pages+' pages = '+total.toLocaleString()+' pages';
- challengeBooks.innerHTML=finishedForList.length?finishedForList.sort((a,b)=>new Date(b.book.finishedAt)-new Date(a.book.finishedAt)).map(x=>'<div class="challenge-book"><div><strong>'+escapeHtml(x.book.title)+'</strong><small>'+escapeHtml(x.series)+' · '+new Date(x.book.finishedAt).toLocaleDateString()+'</small></div><div class="challenge-book-controls"><input aria-label="Page count for '+escapeHtml(x.book.title)+'" type="number" inputmode="numeric" min="1" max="100000" step="1" data-challenge-pages="'+x.book.id+'" value="'+(x.book.pages||'')+'" placeholder="Pages"><button class="btn soft" type="button" data-lookup-pages="'+x.book.id+'">Look up</button></div></div>').join(''):'<p class="panel-intro">No books recorded as finished in this year yet. Mark a book Read on your TBR to start tracking.</p>';
+ challengeBooks.innerHTML=finishedForList.length?finishedForList.sort((a,b)=>new Date(b.book.finishedAt)-new Date(a.book.finishedAt)).map(x=>'<div class="challenge-book"><div><strong>'+escapeHtml(x.book.title)+'</strong><small>'+escapeHtml(x.book.author||x.author||'Unknown author')+' · '+escapeHtml(x.series)+' · '+new Date(x.book.finishedAt).toLocaleDateString()+'</small></div><div class="challenge-book-controls"><input aria-label="Page count for '+escapeHtml(x.book.title)+'" type="number" inputmode="numeric" min="1" max="100000" step="1" data-challenge-pages="'+x.book.id+'" value="'+(x.book.pages||'')+'" placeholder="Pages"><button class="btn soft" type="button" data-lookup-pages="'+x.book.id+'">Look up</button></div></div>').join(''):'<p class="panel-intro">No books recorded as finished in this year yet. Mark a book Read on your TBR to start tracking.</p>';
  challengeBooks.querySelectorAll('[data-challenge-pages]').forEach(input=>input.addEventListener('change',()=>{
   const item=series.flatMap(g=>g.books).find(b=>String(b.id)===input.dataset.challengePages);
   if(!item)return;
@@ -829,5 +841,173 @@ render=function(){challengeRenderBase();renderChallenge();};
 showChallengeGoal();
 // Backfill no dates intentionally: do not invent when older books were completed.
 </script>
-</body>
+
+<script>
+// ISBN lookup reuses the exact existing Open Library Add Book / Add Series flow.
+(function(){
+ const form=document.getElementById('isbnLookupForm');
+ const field=document.getElementById('isbnLookupInput');
+ const status=document.getElementById('isbnLookupStatus');
+ const result=document.getElementById('isbnLookupResults');
+ const start=document.getElementById('isbnScanStart');
+ const stop=document.getElementById('isbnScanStop');
+ const panel=document.getElementById('isbnScanner');
+ const video=document.getElementById('isbnCameraPreview');
+ let stream=null,scanning=false,scanFrame=0,lastScan=0,lookupSerial=0;
+ function cleanISBN(raw){return String(raw||'').replace(/[\s-]/g,'').toUpperCase();}
+ function validISBN(isbn){
+  if(/^\d{13}$/.test(isbn))return [...isbn].reduce((sum,ch,i)=>sum+Number(ch)*(i%2?3:1),0)%10===0;
+  if(/^\d{9}[\dX]$/.test(isbn))return [...isbn].reduce((sum,ch,i)=>sum+(ch==='X'?10:Number(ch))*(10-i),0)%11===0;
+  return false;
+ }
+ function stopCamera(){
+  scanning=false;
+  if(scanFrame)cancelAnimationFrame(scanFrame);
+  scanFrame=0;
+  if(stream){stream.getTracks().forEach(track=>track.stop());stream=null;}
+  video.srcObject=null;panel.hidden=true;
+ }
+ async function lookup(raw){
+  const isbn=cleanISBN(raw),seq=++lookupSerial;
+  field.value=isbn;
+  if(!validISBN(isbn)){status.textContent='Enter a valid ISBN-10 or ISBN-13 (check the digits).';result.innerHTML='';return;}
+  stopCamera();
+  status.textContent='Looking up ISBN '+isbn+'…';result.innerHTML='';
+  try{
+   // Search by ISBN returns work-level series metadata when available.
+   const searchUrl='https://openlibrary.org/search.json?'+new URLSearchParams({isbn,limit:'5',fields:'key,title,author_name,first_publish_year,series,language'});
+   let docs=[];
+   try{const response=await fetch(searchUrl,{signal:AbortSignal.timeout(12000)});if(response.ok)docs=(await response.json()).docs||[];}catch(e){}
+   let book=docs.find(x=>x.title);
+   if(!book){
+    // Fallback to edition details, then resolve author names via author API.
+    const edition=await fetch('https://openlibrary.org/isbn/'+encodeURIComponent(isbn)+'.json',{signal:AbortSignal.timeout(12000)});
+    if(!edition.ok)throw new Error(edition.status===404?'No book was found for that ISBN.':'Book lookup unavailable.');
+    const info=await edition.json();
+    let authors=[];
+    for(const a of (info.authors||[]).slice(0,3)){
+     const key=a.key||a.author?.key;
+     if(!key)continue;
+     try{const r=await fetch('https://openlibrary.org'+key+'.json',{signal:AbortSignal.timeout(7000)});if(r.ok){const item=await r.json();if(item.name)authors.push(item.name);}}catch(e){}
+    }
+    book={title:info.title||'Untitled',author_name:authors,first_publish_year:info.publish_date||'',series:[]};
+   }
+   if(seq!==lookupSerial)return;
+   status.textContent='Book found. Choose whether to add just this book or search the author’s books to add the entire series.';
+   // Put the ISBN result in the existing online results list so both buttons use the same workflow.
+   onlineResults=[book];
+   const box=document.getElementById('onlineCatalogResults');
+   result.innerHTML='<div class="result-card"><div><div class="result-kind">ISBN '+onlineEscape(isbn)+'</div><h4>'+onlineEscape(book.title)+'</h4><p>'+onlineEscape((book.author_name||[]).join(', ')||'Unknown author')+'</p></div><div class="result-actions"><button class="btn soft" id="isbnAddBook" type="button">Add book</button><button class="btn soft" id="isbnAddSeries" type="button">Add series / universe</button></div></div>';
+   // Dispatch delegated events through the existing Open Library results container.
+   document.getElementById('isbnAddBook').onclick=()=>{const button=document.createElement('button');button.dataset.onlineBook='0';box.appendChild(button);button.click();button.remove();};
+   document.getElementById('isbnAddSeries').onclick=()=>{const button=document.createElement('button');button.dataset.onlineSeries='0';box.appendChild(button);button.click();button.remove();};
+  }catch(err){if(seq===lookupSerial){status.textContent=err.message||'Could not find this ISBN. Check your internet connection.';result.innerHTML='';}}
+ }
+ form.addEventListener('submit',e=>{e.preventDefault();lookup(field.value);});
+ stop.addEventListener('click',()=>{stopCamera();status.textContent='Camera stopped. You can enter the ISBN manually.';});
+ start.addEventListener('click',async()=>{
+  if(!navigator.mediaDevices?.getUserMedia){status.textContent='Camera scanning is not supported here. Enter the ISBN manually.';return;}
+  if(!('BarcodeDetector' in window)){status.textContent='Barcode scanning is not supported in this browser. Enter the ISBN manually.';return;}
+  stopCamera();
+  try{
+   const detector=new BarcodeDetector({formats:['ean_13','ean_8','upc_a','upc_e']});
+   stream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'}}});
+   video.srcObject=stream;panel.hidden=false;scanning=true;
+   await video.play();status.textContent='Point your camera at the ISBN barcode on the book.';
+   async function scan(now){
+    if(!scanning)return;
+    if(now-lastScan>=300 && video.readyState>=2){
+     lastScan=now;
+     try{const codes=await detector.detect(video);const isbn=codes.map(x=>cleanISBN(x.rawValue)).find(x=>validISBN(x));if(isbn){lookup(isbn);return;}}catch(e){}
+    }
+    if(scanning)scanFrame=requestAnimationFrame(scan);
+   }
+   scanFrame=requestAnimationFrame(scan);
+  }catch(e){stopCamera();status.textContent='Camera could not start. Allow camera access in your browser or enter the ISBN manually.';}
+ });
+ // Stop the camera when the app goes into the background.
+ document.addEventListener('visibilitychange',()=>{if(document.hidden)stopCamera();});
+ window.addEventListener('pagehide',stopCamera);
+})();
+</script>
+<script>
+/* Two-second select, scroll, tap-to-place workflow. The old drag handles still work. */
+(()=>{
+ const root=document.getElementById('seriesSections');
+ let selection=null,press=null,skipClick=false;
+ const hint=document.createElement('div');hint.className='papertrail-move-hint';
+ hint.textContent='To move: hold ◎ for 2 seconds, scroll, then tap a genre heading. Tap ◎ again to cancel.';
+ root.before(hint);
+ function paint(){
+  root.querySelectorAll('.papertrail-move-selected,.papertrail-move-target').forEach(el=>el.classList.remove('papertrail-move-selected','papertrail-move-target'));
+  if(!selection)return;
+  const selector=selection.type==='genre'?'[data-select-genre]':'[data-select-book]';
+  root.querySelectorAll(selector).forEach(el=>{
+   if((selection.type==='genre'?el.dataset.selectGenre:el.dataset.selectBook)===String(selection.id))el.classList.add('papertrail-move-selected');
+  });
+  root.querySelectorAll('[data-collapse-genre]').forEach(el=>{
+   if(selection.type!=='genre'||el.dataset.collapseGenre!==selection.id)el.classList.add('papertrail-move-target');
+  });
+ }
+ function cancelPress(){if(press){clearTimeout(press.timer);press=null;}}
+ root.addEventListener('pointerdown',e=>{
+  const button=e.target.closest('[data-select-genre],[data-select-book]');
+  if(!button||e.button!==0)return;
+  cancelPress();
+  const type=button.hasAttribute('data-select-genre')?'genre':'book';
+  const id=type==='genre'?button.dataset.selectGenre:button.dataset.selectBook;
+  const startX=e.clientX,startY=e.clientY;
+  const timer=setTimeout(()=>{
+   selection={type,id};press=null;skipClick=true;
+   if(navigator.vibrate)navigator.vibrate(35);
+   hint.textContent=(type==='genre'?'Genre selected':'Book selected')+' — scroll and tap the destination genre. Tap ◎ to cancel.';
+   paint();
+  },2000);
+  press={timer,startX,startY};
+ },true);
+ root.addEventListener('pointermove',e=>{if(press&&(Math.abs(e.clientX-press.startX)>12||Math.abs(e.clientY-press.startY)>12))cancelPress();},true);
+ ['pointerup','pointercancel','contextmenu'].forEach(type=>root.addEventListener(type,cancelPress,true));
+ root.addEventListener('click',e=>{
+  if(skipClick){skipClick=false;e.preventDefault();e.stopImmediatePropagation();return;}
+  const selectButton=e.target.closest('[data-select-genre],[data-select-book]');
+  if(selectButton){e.preventDefault();e.stopImmediatePropagation();if(selection){selection=null;hint.textContent='To move: hold ◎ for 2 seconds, scroll, then tap a genre heading.';paint();}return;}
+  if(!selection)return;
+  const target=e.target.closest('[data-collapse-genre]');
+  if(!target)return;
+  e.preventDefault();e.stopImmediatePropagation();
+  const dest=target.dataset.collapseGenre;
+  if(selection.type==='genre'){
+   if(selection.id===dest)return;
+   const order=orderedPapertrailGenres([...genres,...series.map(s=>s.genre).filter(Boolean)]);
+   const from=order.indexOf(selection.id),to=order.indexOf(dest);
+   if(from<0||to<0)return;
+   order.splice(from,1);
+   order.splice(order.indexOf(dest)+1,0,selection.id);
+   papertrailGenreOrder=order;
+   try{localStorage.setItem(papertrailGenreOrderKey,JSON.stringify(order));}catch(err){alert('Could not save genre order.');}
+   toast('Genre moved below '+dest);
+  }else{
+   const id=Number(selection.id),source=series.find(g=>g.books.some(b=>b.id===id));
+   if(!source)return;
+   if(source.genre===dest){selection=null;paint();return;}
+   const book=source.books.find(b=>b.id===id);
+   let destination=series.find(g=>g.genre===dest&&g.name.toLowerCase()===source.name.toLowerCase()&& (source.name.toLowerCase()!=='standalone'||g.author.toLowerCase()===source.author.toLowerCase()));
+   if(!destination){
+    destination={...source,id:nextId++,genre:dest,books:[],expanded:false};
+    series.push(destination);
+   }
+   if(destination.books.some(b=>b.title.toLowerCase()===book.title.toLowerCase())){alert('That book is already in the destination series.');return;}
+   source.books=source.books.filter(b=>b.id!==id);
+   book.order=destination.books.length+1;destination.books.push(book);
+   if(!source.books.length)series=series.filter(g=>g.id!==source.id);
+   toast('Book moved to '+dest);
+  }
+  selection=null;hint.textContent='To move: hold ◎ for 2 seconds, scroll, then tap a genre heading.';
+  render();paint();
+ },true);
+ // Restore selected highlighting after ordinary app rerenders.
+ const observer=new MutationObserver(()=>{if(selection)paint();});
+ observer.observe(root,{childList:true});
+})();
+</script></body>
 </html>
