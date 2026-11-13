@@ -222,6 +222,12 @@ select { background:var(--surface); color:var(--site-on-background); border:1px 
 .papertrail-series-move-visible{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:68px;min-height:42px;padding:7px 12px;border:1px solid #87a7a0;border-radius:10px;background:#e6f2ee;color:#164b40;font-weight:750;font-size:14px;cursor:pointer;touch-action:manipulation}
 .papertrail-series-move-visible:active{background:#c9e5db}
 @media(max-width:560px){.papertrail-series-title-row{align-items:flex-start}.papertrail-series-move-visible{min-width:64px;min-height:44px}}
+</style><style>
+.papertrail-book-move{display:flex!important;align-items:center;gap:5px;flex-wrap:nowrap}
+.papertrail-book-arrow{min-width:36px;min-height:40px;border:1px solid #b4c8bc;border-radius:8px;background:var(--surface-muted,#f6f7f6);color:inherit;font-size:20px;font-weight:700;cursor:pointer;touch-action:manipulation}
+.papertrail-book-arrow:disabled{opacity:.28;cursor:default}
+.book-row .papertrail-book-move{grid-column:auto;justify-self:end}
+@media(max-width:600px){.book-row .papertrail-book-move{grid-column:1/-1;justify-self:end;margin-top:2px}.papertrail-book-arrow{min-width:44px;min-height:42px}}
 </style></head>
 <body>
 <div class="app-root" id="appRoot">
@@ -665,47 +671,17 @@ render=function(){
   const bid=Number(row.dataset.bookId),group=series.find(s=>s.books.some(b=>b.id===bid));
   if(!group)return;
   const tools=document.createElement('div');tools.className='papertrail-book-move';
-  tools.innerHTML='<button type="button" class="papertrail-grip" title="Press and hold to reorder this book" aria-label="Press and hold to reorder this book">⠿</button>';
+  tools.innerHTML='<button type="button" class="papertrail-book-arrow" data-book-step="-1" aria-label="Move book up" title="Move book up">↑</button><button type="button" class="papertrail-book-arrow" data-book-step="1" aria-label="Move book down" title="Move book down">↓</button>';
   row.appendChild(tools);
-  const grip=tools.querySelector('.papertrail-grip');
-  // A deliberate long press is required. Ordinary vertical swipes scroll normally.
-  let holdTimer=null,press=null;
-  function clearHold(){if(holdTimer!==null){clearTimeout(holdTimer);holdTimer=null;}}
-  grip.addEventListener('pointerdown',e=>{
-   if(e.button!==0)return;
-   clearHold();
-   press={id:e.pointerId,x:e.clientX,y:e.clientY,active:false};
-   holdTimer=setTimeout(()=>{
-    holdTimer=null;
-    if(!press||press.id!==e.pointerId)return;
-    press.active=true;
-    movingBook={groupId:group.id,bookId:bid,startY:press.y};
-    row.style.opacity='.55';
-    grip.style.background='#bad6c2';
-    try{grip.setPointerCapture(e.pointerId);}catch(err){}
-    if(navigator.vibrate)navigator.vibrate(25);
-   },550);
+  const position=group.books.slice().sort((a,b)=>a.order-b.order).findIndex(b=>b.id===bid);
+  tools.querySelectorAll('[data-book-step]').forEach(button=>{
+   const step=Number(button.dataset.bookStep);
+   button.disabled=position+step<0||position+step>=group.books.length;
+   button.addEventListener('click',e=>{
+    e.stopPropagation();
+    movePapertrailBook(group.id,bid,step);
+   });
   });
-  grip.addEventListener('pointermove',e=>{
-   if(!press||press.id!==e.pointerId)return;
-   if(!press.active && Math.hypot(e.clientX-press.x,e.clientY-press.y)>9){clearHold();press=null;}
-  });
-  grip.addEventListener('pointerup',e=>{
-   clearHold();
-   if(!press||!press.active||!movingBook){press=null;return;}
-   const target=document.elementFromPoint(e.clientX,e.clientY)?.closest('.book-row[data-book-id]');
-   if(target&&target!==row){
-    const targetId=Number(target.dataset.bookId),g=series.find(x=>x.id===movingBook.groupId);
-    if(g&&g.books.some(b=>b.id===targetId)){
-     g.books.sort((a,b)=>a.order-b.order);
-     const from=g.books.findIndex(b=>b.id===movingBook.bookId),to=g.books.findIndex(b=>b.id===targetId);
-     if(from>=0&&to>=0){const [book]=g.books.splice(from,1);g.books.splice(to,0,book);g.books.forEach((b,i)=>b.order=i+1);}
-    }
-   }
-   press=null;movingBook=null;grip.style.background='';row.style.opacity='1';render();
-  });
-  grip.addEventListener('pointercancel',()=>{clearHold();press=null;movingBook=null;grip.style.background='';row.style.opacity='1';});
-  grip.addEventListener('contextmenu',e=>e.preventDefault());
  });
 };
 function csvQuote(value){const str=String(value??'');return '"'+str.replace(/"/g,'""')+'"';}
